@@ -371,11 +371,39 @@ async function generateDescriptionFlow() {
     {
       type: "input",
       name: "scriptInput",
-      message: "📝 Tóm tắt nội dung video (hoặc paste kịch bản):",
-      validate: (input: string) =>
-        input.trim().length > 0 ? true : "Vui lòng nhập nội dung",
+      message: "📝 Tóm tắt nội dung video (Enter để AI tự tạo kịch bản trước):",
+      default: "",
     },
   ]);
+
+  let scriptContext = scriptInput.trim();
+
+  // Nếu bỏ trống → gọi VideoCreatorAgent tạo script nhanh
+  if (!scriptContext) {
+    console.log(
+      chalk.yellow(
+        "\n🎬 Chưa có tóm tắt — AI đang tự tạo kịch bản video nhanh...\n",
+      ),
+    );
+
+    const videoCreator = new VideoCreatorAgent();
+    const autoScript = await generateWithRetry(
+      () => videoCreator.generateScript(product, platform),
+      (s) => validateScript(s),
+    );
+
+    scriptContext = autoScript.body.substring(0, 200);
+    console.log(
+      chalk.green(
+        "✅ Đã tạo kịch bản nhanh. Đang dùng làm ngữ cảnh cho caption...\n",
+      ),
+    );
+    console.log(chalk.gray(`   Tóm tắt: "${scriptContext}..."\n`));
+
+    // Lưu script vào history luôn
+    const scriptContent: GeneratedContent = { product, script: autoScript };
+    await saveToHistory(product, scriptContent, "script");
+  }
 
   console.log(chalk.yellow("\n⚙️ Đang tạo mô tả bài đăng...\n"));
 
@@ -967,18 +995,45 @@ async function generateTrendScanFlow() {
         {
           type: "input",
           name: "scriptSummary",
-          message: "📝 Tóm tắt nội dung video (hoặc paste kịch bản):",
-          validate: (input: string) =>
-            input.trim().length > 0 ? true : "Vui lòng nhập nội dung",
+          message:
+            "📝 Tóm tắt nội dung video (Enter để AI tự tạo kịch bản trước):",
+          default: "",
         },
       ]);
+
+      let scriptContext = scriptSummary.trim();
+
+      if (!scriptContext) {
+        console.log(
+          chalk.yellow(
+            "\n🎬 Chưa có tóm tắt — AI đang tự tạo kịch bản video nhanh...\n",
+          ),
+        );
+
+        const videoCreator = new VideoCreatorAgent();
+        const autoScript = await generateWithRetry(
+          () => videoCreator.generateScript(product, platform),
+          (s) => validateScript(s),
+        );
+
+        scriptContext = autoScript.body.substring(0, 200);
+        console.log(
+          chalk.green(
+            "✅ Đã tạo kịch bản nhanh. Đang dùng làm ngữ cảnh cho caption...\n",
+          ),
+        );
+        console.log(chalk.gray(`   Tóm tắt: "${scriptContext}..."\n`));
+
+        const scriptContent: GeneratedContent = { product, script: autoScript };
+        await saveToHistory(product, scriptContent, "script");
+      }
 
       console.log(chalk.yellow("\n⚙️ Đang tạo mô tả bài đăng...\n"));
 
       const marketingWriter = new MarketingWriterAgent();
       const description = await generateWithRetry(
         () =>
-          marketingWriter.generateDescription(product, scriptSummary, platform),
+          marketingWriter.generateDescription(product, scriptContext, platform),
         (d) => validateDescription(d),
       );
 
