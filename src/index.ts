@@ -37,6 +37,7 @@ import {
   exportToTextFile,
 } from "./data/storage";
 import { TTSService } from "./services/tts-service";
+import { getUsage, resetUsage } from "./services/usage-tracker";
 import { NICHES, getNicheById, getRandomNiche } from "./config/niches";
 import fs from "fs";
 
@@ -1049,6 +1050,81 @@ async function generateTrendScanFlow() {
   }
 }
 
+// ── Usage Stats ──
+
+async function viewUsage() {
+  console.log(
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    chalk.bold.cyan("║   📊  USAGE STATS - Thống kê sử dụng AI          ║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
+  );
+
+  const stats = getUsage();
+
+  console.log(chalk.bold(`📈 Tổng số lần gọi AI: ${stats.totalCalls}`));
+  console.log(
+    chalk.gray(
+      `   Lần cuối reset: ${new Date(stats.lastReset).toLocaleString("vi-VN")}\n`,
+    ),
+  );
+
+  console.log(chalk.bold("\n📡 Theo provider:"));
+  for (const [provider, count] of Object.entries(stats.byProvider)) {
+    if (count > 0) {
+      console.log(
+        `   ${provider === "ollama" ? "🟢" : "🔵"} ${provider}: ${count} lần`,
+      );
+    }
+  }
+
+  console.log(chalk.bold("\n🔧 Theo chức năng:"));
+  const featureLabels: Record<string, string> = {
+    trend_research: "🔍 Trend Research",
+    video_script: "🎬 Video Script",
+    marketing_caption: "✍️ Marketing Caption",
+    image_brief: "🎨 Image Brief",
+  };
+  for (const [feature, count] of Object.entries(stats.byFeature)) {
+    if (count > 0) {
+      console.log(`   ${featureLabels[feature] || feature}: ${count} lần`);
+    }
+  }
+
+  console.log(chalk.cyan("\n" + "─".repeat(50) + "\n"));
+
+  const { action } = await inquirer.prompt([
+    {
+      type: "rawlist",
+      name: "action",
+      message: "Làm gì tiếp theo?",
+      choices: [
+        { name: "🔄  Reset thống kê", value: "reset" },
+        { name: "⏭️  Quay lại menu chính", value: "menu" },
+      ],
+    },
+  ]);
+
+  if (action === "reset") {
+    const { confirm } = await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "confirm",
+        message: "Xác nhận reset toàn bộ thống kê?",
+        default: false,
+      },
+    ]);
+    if (confirm) {
+      resetUsage();
+      console.log(chalk.green("\n🗑️  Đã reset thống kê\n"));
+      await viewUsage();
+    }
+  }
+}
+
 // ── Main Menu ──
 
 async function askMainMenu(): Promise<string> {
@@ -1100,6 +1176,7 @@ async function askMainMenu(): Promise<string> {
         { name: "[Products] - Xem & quản lý sản phẩm", value: "products" },
         new inquirer.Separator(" ⚙️ Hệ thống "),
         { name: "[System] - Kiểm tra kết nối AI providers", value: "check" },
+        { name: "[Usage] - Xem thống kê sử dụng AI", value: "usage" },
         new inquirer.Separator(""),
         { name: "❌  Thoát chương trình", value: "exit" },
       ],
@@ -1129,6 +1206,11 @@ async function mainLoop() {
 
     if (action === "check") {
       await checkProvidersStatus();
+      continue;
+    }
+
+    if (action === "usage") {
+      await viewUsage();
       continue;
     }
 

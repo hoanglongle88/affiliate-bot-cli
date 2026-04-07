@@ -78,7 +78,11 @@ export class AutonomousTrendScanner {
       );
     }, 500);
 
-    const response = await callAI(TREND_RESEARCHER_SYSTEM_PROMPT, userPrompt);
+    const response = await callAI(
+      TREND_RESEARCHER_SYSTEM_PROMPT,
+      userPrompt,
+      "trend_research",
+    );
 
     clearInterval(loadingInterval);
     process.stdout.write("\r" + " ".repeat(50) + "\r");

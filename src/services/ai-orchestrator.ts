@@ -1,10 +1,12 @@
 import chalk from "chalk";
 import { callOllama, checkOllamaConnection } from "./ollama-client";
 import { callGemini, checkGeminiConnection } from "./gemini-client";
+import { recordUsage } from "./usage-tracker";
 
 export async function callAI(
   systemPrompt: string,
   userPrompt: string,
+  feature: string = "unknown",
 ): Promise<string> {
   // Try Ollama first
   try {
@@ -14,7 +16,9 @@ export async function callAI(
       console.log(
         chalk.yellow(`📡 Đang dùng: Ollama - ${ollamaModel} (Local AI)`),
       );
-      return await callOllama(systemPrompt, userPrompt);
+      const result = await callOllama(systemPrompt, userPrompt);
+      recordUsage("ollama", feature);
+      return result;
     }
     console.log("⚠️  Ollama không khả dụng, chuyển sang Gemini...");
   } catch {
@@ -29,7 +33,9 @@ export async function callAI(
       console.log(
         chalk.yellow(`📡 Đang dùng: Gemini - ${geminiModel} (Cloud AI)`),
       );
-      return await callGemini(systemPrompt, userPrompt);
+      const result = await callGemini(systemPrompt, userPrompt);
+      recordUsage("gemini", feature);
+      return result;
     }
     throw new Error("Gemini không khả dụng - kiểm tra API key");
   } catch {

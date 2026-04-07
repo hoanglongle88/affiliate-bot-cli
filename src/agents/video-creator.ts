@@ -21,7 +21,11 @@ export class VideoCreatorAgent {
       );
     }, 500);
 
-    const response = await callAI(VIDEO_CREATOR_SYSTEM_PROMPT, userPrompt);
+    const response = await callAI(
+      VIDEO_CREATOR_SYSTEM_PROMPT,
+      userPrompt,
+      "video_script",
+    );
     clearInterval(loadingInterval);
     process.stdout.write("\r" + " ".repeat(50) + "\r");
 

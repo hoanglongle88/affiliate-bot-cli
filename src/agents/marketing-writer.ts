@@ -32,7 +32,11 @@ export class MarketingWriterAgent {
       process.stdout.write(chalk.gray(`\r   ⏳ Đang tạo mô tả... ${elapsed}s`));
     }, 500);
 
-    const response = await callAI(MARKETING_WRITER_SYSTEM_PROMPT, userPrompt);
+    const response = await callAI(
+      MARKETING_WRITER_SYSTEM_PROMPT,
+      userPrompt,
+      "marketing_caption",
+    );
     clearInterval(loadingInterval);
     process.stdout.write("\r" + " ".repeat(50) + "\r");
 

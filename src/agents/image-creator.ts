@@ -34,7 +34,11 @@ export class ImageCreatorAgent {
     }, 500);
 
     const userPrompt = buildImagePromptUserPrompt(input);
-    const response = await callAI(IMAGE_PROMPT_SYSTEM, userPrompt);
+    const response = await callAI(
+      IMAGE_PROMPT_SYSTEM,
+      userPrompt,
+      "image_brief",
+    );
 
     clearInterval(loadingInterval);
     process.stdout.write("\r" + " ".repeat(50) + "\r");
