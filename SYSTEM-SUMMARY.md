@@ -68,14 +68,17 @@
 **Workflow:** `history`
 
 - Xem 10 entry gần nhất (tối đa 100)
-- Xem chi tiết + post-actions: Copy / Export / Xóa / Tạo lại / Quay lại
+- Xem chi tiết + post-actions: Copy / Export / Xóa / Tạo lại / ⏮️ Back / Menu
+- 🗑️ **Xóa toàn bộ lịch sử** (có xác nhận, Supabase + JSON)
 
 ### 7. 📦 Products — Quản lý sản phẩm
 
 **Workflow:** `products`
 
 - Xem sản phẩm đã lưu + số lần dùng
-- Xóa sản phẩm
+- Xóa sản phẩm individually
+- 🗑️ **Xóa toàn bộ sản phẩm** (có xác nhận, Supabase + JSON)
+- Navigation: ⏮️ Back → danh sách, Menu → menu chính
 - Sắp xếp theo usage count (giảm dần)
 
 ### 8. ⚙️ System Check — Kiểm tra AI providers
@@ -320,8 +323,20 @@ User Input → Chọn Agent → AI Orchestrator → Ollama/Gemini
                   ↓
    Formatting + Display + Save History
                   ↓
-  Post-Actions: Copy / Export / Edit / Regenerate
+  Post-Actions: Copy / Export / Edit / Regenerate / ⏮️ Back / Menu
 ```
+
+---
+
+## 🗑️ Xóa dữ liệu
+
+**Xóa toàn bộ sản phẩm:** `deleteAllProducts()` → Supabase `DELETE FROM products` hoặc JSON `writeJSON([])`
+
+**Xóa toàn bộ lịch sử:** `clearHistory()` → Supabase `DELETE FROM history` hoặc JSON `writeJSON([])`
+
+**Xóa từng entry:** `deleteProduct(id)`, `deleteHistoryEntry(id)`
+
+Tất cả có xác nhận trước khi thực thi.
 
 ---
 
@@ -350,6 +365,8 @@ User Input → Chọn Agent → AI Orchestrator → Ollama/Gemini
 - ✏️ **Chỉnh sửa:** Edit hook/body/CTA/caption trong text editor
 - 💾 **Export:** Copy clipboard 1 click hoặc export file `.txt`
 - 🔄 **Tái sử dụng:** Products lưu tự động, theo dõi usage count
+- ⏮️ **Back navigation:** Quay lại bước trước hoặc về menu chính
+- 🗑️ **Xóa toàn bộ:** Xóa hết products hoặc history (có xác nhận)
 - 📋 **UI/UX:** Menu phân nhóm, header chi tiết per feature, empty state hints
 - 🎨 **Color output:** Chalk colors cho console đẹp
 - 📊 **History cap:** Tối đa 100 entries

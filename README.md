@@ -204,7 +204,8 @@ npm run migrate    # Migration JSON → Supabase
 
 - Xem 10 entry gần nhất (tối đa 100 entries)
 - Xem chi tiết: sản phẩm, workflow, thời gian, nội dung
-- **Post-actions:** Copy / Export / Xóa / Tạo lại với SP này / Quay lại
+- **Post-actions:** Copy / Export / Xóa entry / Tạo lại / ⏮️ Back / Menu
+- 🗑️ **Xóa toàn bộ lịch sử** (có xác nhận, hoạt động trên Supabase + JSON)
 
 ---
 
@@ -214,7 +215,9 @@ npm run migrate    # Migration JSON → Supabase
 
 - Xem tất cả sản phẩm đã lưu + thống kê số lần dùng
 - Xem chi tiết: tên, giá, rating, đã bán, mô tả
-- Xóa sản phẩm không còn dùng
+- Xóa sản phẩm individually
+- 🗑️ **Xóa toàn bộ sản phẩm** (có xác nhận, hoạt động trên Supabase + JSON)
+- **Navigation:** ⏮️ Back → danh sách sản phẩm, Menu → menu chính
 - Sản phẩm sắp xếp theo số lần dùng (giảm dần)
 
 ---
@@ -357,8 +360,29 @@ Validation (retry tối đa 2 lần)
 Formatting → Display → saveToHistory()
        │
        ▼
-Post-Actions: Copy / Export / Edit / Regenerate / Menu
+Post-Actions: Copy / Export / Edit / Regenerate / ⏮️ Back / Menu
 ```
+
+---
+
+## 🛡️ Xóa dữ liệu
+
+### Xóa toàn bộ sản phẩm
+
+- Vào **Products** → Chọn `🗑️ Xóa TOÀN BỘ sản phẩm`
+- Có xác nhận trước khi xóa
+- Hoạt động trên cả Supabase và JSON mode
+
+### Xóa toàn bộ lịch sử
+
+- Vào **History** → Chọn `🗑️ Xóa TOÀN BỘ lịch sử`
+- Có xác nhận trước khi xóa
+- Hoạt động trên cả Supabase và JSON mode
+
+### Xóa từng entry
+
+- **Products:** Xem chi tiết → Xóa sản phẩm này
+- **History:** Xem entry → Xóa entry này
 
 ---
 
