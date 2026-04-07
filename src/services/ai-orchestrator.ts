@@ -44,7 +44,17 @@ export async function checkProvidersStatus() {
   const ollamaModel = process.env.OLLAMA_MODEL || "llama3.2";
   const geminiModel = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
-  console.log(chalk.bold("\n📡 Trạng thái AI Providers:"));
+  console.log(
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    chalk.bold.cyan("║   ⚙️  SYSTEM CHECK - Trạng thái AI Providers     ║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
+  );
+
+  console.log(chalk.bold("\n📡 Kết nối AI providers:"));
   console.log(
     `   ${ollamaStatus ? chalk.green("✅") : chalk.red("❌")} Ollama - ${ollamaModel} (Local AI)`,
   );

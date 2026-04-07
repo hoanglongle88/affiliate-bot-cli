@@ -1,32 +1,22 @@
 import chalk from "chalk";
 import { callAI } from "../services/ai-orchestrator";
-import {
-  TrendBrief,
-  ScanSource,
-  ProductInfo,
-  Platform,
-} from "../types/content";
+import { TrendBrief, ScanSource, ProductInfo } from "../types/content";
 import { NicheConfig, getRandomNiche } from "../config/niches";
 import {
   TREND_RESEARCHER_SYSTEM_PROMPT,
   buildTrendResearcherUserPrompt,
 } from "../prompts/trend-researcher";
 import { getSourceLabel, getRandomSource } from "../services/trends-api";
-import { VideoCreatorAgent } from "../agents/video-creator";
-import { MarketingWriterAgent } from "../agents/marketing-writer";
-import {
-  formatScriptOutput,
-  formatDescriptionOutput,
-} from "../utils/formatter";
-import { saveProduct, saveToHistory } from "../data/storage";
+import { saveProduct } from "../data/storage";
 
 export class AutonomousTrendScanner {
   /**
-   * Main entry: pick platform + niche → AI researches web → generate content
+   * Main entry: pick source + niche → AI researches web → return TrendBrief
+   * Chỉ research trend, KHÔNG tạo script/description
    */
   async scanAndGenerate(
     niche?: NicheConfig,
-  ): Promise<{ brief: TrendBrief; script: any; description: any }> {
+  ): Promise<{ brief: TrendBrief; product: ProductInfo }> {
     // 1. Pick source & niche
     const source = getRandomSource();
     const selectedNiche = niche || getRandomNiche();
@@ -42,7 +32,7 @@ export class AutonomousTrendScanner {
     // 3. Display trend brief
     this.displayBrief(brief);
 
-    // 4. Convert to ProductInfo
+    // 4. Convert to ProductInfo và lưu để tái sử dụng
     const product: ProductInfo = {
       name: brief.product.name,
       price: brief.product.price,
@@ -51,40 +41,18 @@ export class AutonomousTrendScanner {
       description: brief.product.description,
     };
 
-    // Save product for reuse
     await saveProduct(product);
-
-    // 5. Generate script
-    const platform: Platform =
-      brief.platform === "shopee" ? "tiktok" : brief.platform;
-    console.log(chalk.yellow("\n🎬 Đang tạo kịch bản video...\n"));
-    const videoCreator = new VideoCreatorAgent();
-    const script = await videoCreator.generateScript(product, platform);
-
-    console.log(formatScriptOutput(script));
-
-    // 6. Generate description
-    console.log(chalk.yellow("\n📝 Đang tạo mô tả bài đăng...\n"));
-    const marketingWriter = new MarketingWriterAgent();
-    const description = await marketingWriter.generateDescription(
-      product,
-      script.body.substring(0, 200),
-      platform,
+    console.log(
+      chalk.green(`\n💾 Đã lưu sản phẩm "${product.name}" để dùng lại!\n`),
     );
-
-    console.log(formatDescriptionOutput(description));
-
-    // 7. Save to history
-    const content = { product, script, description };
-    await saveToHistory(product, content, "full");
 
     console.log(
-      chalk.cyan(
-        "\n🎉 Hoàn thành! Đã tạo đầy đủ: Trend Brief + Kịch bản + Mô tả\n",
-      ),
+      chalk.cyan("🎉 Research hoàn tất! Bạn có thể dùng sản phẩm này để:\n"),
     );
+    console.log(chalk.gray("   → Tạo kịch bản video (Video Creator)"));
+    console.log(chalk.gray("   → Tạo mô tả bài đăng (Marketing Writer)\n"));
 
-    return { brief, script, description };
+    return { brief, product };
   }
 
   /**

@@ -6,18 +6,22 @@
 
 ---
 
-## 🎯 8 Chức năng chính của hệ thống
+## 🎯 7 Chức năng chính của hệ thống
 
-### 1. **Auto Scan & Generate (Quét trend & Tạo nội dung)** 🚀
+### 1. **Trend Researcher (Nghiên cứu xu hướng)** 🔍
 
 **Workflow:** `trendscan`
 
 - Tự động quét sản phẩm trending bằng nghiên cứu web AI
-- Chọn niche (tự động hoặc chọn thủ công từ 10+ niche có sẵn)
+- Chọn niche (tự động hoặc chọn thủ công từ 12 niches có sẵn)
 - Nghiên cứu sản phẩm thực tế đang hot trên các sàn thương mại điện tử Việt Nam
 - Tạo Trend Brief hoàn chỉnh với thông tin sản phẩm, hook, hashtags, CTA
-- Tự động tạo kịch bản video + mô tả bài đăng
-- Lưu toàn bộ vào history để dùng lại
+- Tự động lưu sản phẩm để tái sử dụng
+- **Hỏi user muốn làm gì tiếp:**
+  - 🎬 Tạo kịch bản video từ sản phẩm này
+  - ✍️ Tạo mô tả bài đăng
+  - 🔍 Scan niche khác
+  - ⏭️ Quay lại menu chính
 
 ### 2. **Video Creator (Tạo kịch bản video)** 🎬
 
@@ -40,16 +44,7 @@
 - Bao gồm: Câu hook, lợi ích nổi bật, social proof, urgency, CTA và 5-7 hashtags
 - Tối ưu cho thuật toán TikTok/YouTube
 
-### 4. **Full Workflow (Script + Description)** 🚀
-
-**Workflow:** `full`
-
-- Kết hợp Video Creator + Marketing Writer trong một luồng
-- Quy trình 2 bước: Tạo script trước, sau đó tạo description
-- Dùng nội dung script làm ngữ cảnh để生成 description
-- Gói nội dung hoàn chỉnh sẵn sàng đăng
-
-### 5. **Text-to-Speech (Tạo giọng nói AI)** 🎤
+### 4. **Text-to-Speech (Tạo giọng nói AI)** 🎤
 
 **Workflow:** `tts`
 
@@ -59,7 +54,7 @@
 - Lưu file audio vào thư mục `/output/audio/`
 - Có thể phát lại giọng nói vừa tạo
 
-### 6. **Quản lý History** 📜
+### 5. **Quản lý History** 📜
 
 **Workflow:** `history`
 
@@ -68,7 +63,7 @@
 - Tùy chọn: Copy vào clipboard, Export ra file .txt, Xóa entry, Tạo lại với sản phẩm này
 - Lưu trữ: scripts, descriptions, timestamps, thông tin sản phẩm
 
-### 7. **Quản lý sản phẩm** 📦
+### 6. **Quản lý sản phẩm** 📦
 
 **Workflow:** `products`
 
@@ -77,7 +72,7 @@
 - Xóa sản phẩm không còn dùng
 - Sản phẩm được tự động lưu trong quá trình tạo nội dung
 
-### 8. **Kiểm tra trạng thái AI** 🔄
+### 7. **Kiểm tra trạng thái AI** 🔄
 
 **Workflow:** `check`
 

@@ -14,7 +14,6 @@ import { VideoCreatorAgent } from "./agents/video-creator";
 import { MarketingWriterAgent } from "./agents/marketing-writer";
 import { AutonomousTrendScanner } from "./agents/trend-scanner";
 import {
-  formatFullOutput,
   formatScriptOutput,
   formatDescriptionOutput,
   copyToClipboard,
@@ -216,9 +215,8 @@ async function editText(currentText: string, label: string): Promise<string> {
 // ── Post-Action Handler ──
 
 async function handlePostActions(
-  type: "script" | "description" | "full",
+  type: "script" | "description",
   content: GeneratedContent,
-  workflow?: "script" | "description" | "full",
 ) {
   while (true) {
     const choices = [
@@ -244,26 +242,14 @@ async function handlePostActions(
       const text =
         type === "script"
           ? getScriptText(content.script!)
-          : type === "description"
-            ? getDescriptionText(content.description!)
-            : getFullText(content);
-      const label =
-        type === "script"
-          ? "kịch bản"
-          : type === "description"
-            ? "mô tả"
-            : "kịch bản + mô tả";
+          : getDescriptionText(content.description!);
+      const label = type === "script" ? "kịch bản" : "mô tả";
       await copyToClipboard(text, label);
       continue;
     }
 
     if (action === "export") {
-      const label =
-        type === "full"
-          ? "Kịch bản + Mô tả"
-          : type === "script"
-            ? "Kịch bản"
-            : "Mô tả";
+      const label = type === "script" ? "Kịch bản" : "Mô tả";
       const filepath = exportToTextFile(content, label);
       console.log(chalk.green(`\n💾 Đã xuất ra file: ${filepath}\n`));
       continue;
@@ -307,55 +293,6 @@ async function handlePostActions(
         );
         console.log(chalk.green("\n✅ Đã cập nhật!\n"));
         console.log(formatDescriptionOutput(content.description));
-      } else if (type === "full") {
-        const { editPart } = await inquirer.prompt([
-          {
-            type: "rawlist",
-            name: "editPart",
-            message: "Chỉnh sửa phần nào?",
-            choices: [
-              { name: "🎬 Kịch bản video", value: "script" },
-              { name: "📝 Mô tả bài đăng", value: "description" },
-            ],
-          },
-        ]);
-
-        if (editPart === "script" && content.script) {
-          const { scriptType } = await inquirer.prompt([
-            {
-              type: "rawlist",
-              name: "scriptType",
-              message: "Chỉnh sửa phần nào?",
-              choices: [
-                { name: "📝 Nội dung chính (body)", value: "body" },
-                { name: "📢 Voiceover CTA", value: "cta" },
-                { name: "🎣 Hook", value: "hook" },
-              ],
-            },
-          ]);
-
-          if (scriptType === "body") {
-            content.script.body = await editText(
-              content.script.body,
-              "nội dung chính",
-            );
-          } else if (scriptType === "cta") {
-            content.script.voiceoverCTA = await editText(
-              content.script.voiceoverCTA,
-              "Voiceover CTA",
-            );
-          } else {
-            content.script.hook = await editText(content.script.hook, "Hook");
-          }
-        } else if (editPart === "description" && content.description) {
-          content.description.caption = await editText(
-            content.description.caption,
-            "caption",
-          );
-        }
-
-        console.log(chalk.green("\n✅ Đã cập nhật!\n"));
-        console.log(formatFullOutput(content));
       }
       continue;
     }
@@ -365,8 +302,6 @@ async function handlePostActions(
         await generateScriptFlow();
       } else if (type === "description") {
         await generateDescriptionFlow();
-      } else if (type === "full") {
-        await generateFullFlow();
       }
       return; // regenerate sẽ gọi lại flow, không loop tiếp
     }
@@ -376,7 +311,18 @@ async function handlePostActions(
 // ── Workflow Functions ──
 
 async function generateScriptFlow() {
-  console.log(chalk.bold.cyan("\n🎬 VIDEO CREATOR - Tạo kịch bản video\n"));
+  console.log(
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    chalk.bold.cyan("║   🎬  VIDEO CREATOR - Tạo kịch bản video          ║"),
+  );
+  console.log(
+    chalk.bold.cyan("║       Kịch bản TikTok/YouTube - Chuẩn viral        ║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
+  );
 
   const product = await selectOrEnterProduct();
   const platform = await selectPlatform();
@@ -397,7 +343,18 @@ async function generateScriptFlow() {
 }
 
 async function generateDescriptionFlow() {
-  console.log(chalk.bold.cyan("\n✍️  MARKETING WRITER - Tạo mô tả bài đăng\n"));
+  console.log(
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    chalk.bold.cyan("║   ✍️  MARKETING WRITER - Tạo mô tả bài đăng       ║"),
+  );
+  console.log(
+    chalk.bold.cyan("║       Caption chuẩn SEO - Hashtags trending        ║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
+  );
 
   const product = await selectOrEnterProduct();
   const platform = await selectPlatform();
@@ -429,66 +386,29 @@ async function generateDescriptionFlow() {
   await handlePostActions("description", content);
 }
 
-async function generateFullFlow() {
-  console.log(
-    chalk.bold.cyan("\n╔═══════════════════════════════════════════╗"),
-  );
-  console.log(chalk.bold.cyan("║   🚀  FULL WORKFLOW - Kịch bản + Mô tả    ║"));
-  console.log(
-    chalk.bold.cyan("╚═══════════════════════════════════════════╝\n"),
-  );
-
-  const product = await selectOrEnterProduct();
-  const platform = await selectPlatform();
-
-  console.log(
-    chalk.yellow(
-      `\n⚙️ Bước 1/2: Đang tạo kịch bản ${platform.toUpperCase()}...\n`,
-    ),
-  );
-
-  const videoCreator = new VideoCreatorAgent();
-  const script = await generateWithRetry(
-    () => videoCreator.generateScript(product, platform),
-    (s) => validateScript(s),
-  );
-
-  console.log(formatScriptOutput(script));
-
-  console.log(chalk.yellow("\n⚙️ Bước 2/2: Đang tạo mô tả bài đăng...\n"));
-
-  const marketingWriter = new MarketingWriterAgent();
-  const description = await generateWithRetry(
-    () =>
-      marketingWriter.generateDescription(
-        product,
-        script.body.substring(0, 200),
-        platform,
-      ),
-    (d) => validateDescription(d),
-  );
-
-  console.log(formatDescriptionOutput(description));
-
-  const fullContent: GeneratedContent = { product, script, description };
-  await saveToHistory(product, fullContent, "full");
-
-  console.log(
-    chalk.cyan(
-      "\n🎉 Hoàn thành! Đã tạo đầy đủ: Kịch bản video + Mô tả bài đăng\n",
-    ),
-  );
-
-  await handlePostActions("full", fullContent);
-}
-
 // ── History Viewer ──
 
 async function viewHistory() {
+  console.log(
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    chalk.bold.cyan("║   📜  HISTORY - Lịch sử nội dung đã tạo           ║"),
+  );
+  console.log(
+    chalk.bold.cyan("║       Xem, quản lý & tái sử dụng nội dung          ║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
+  );
+
   const history = await getHistory();
 
   if (history.length === 0) {
-    console.log(chalk.yellow("\n📭 Chưa có lịch sử nào.\n"));
+    console.log(chalk.yellow("\n📭 Chưa có lịch sử nội dung nào.\n"));
+    console.log(
+      chalk.gray("💡 Mẹo: Hãy tạo nội dung trước để xem ở đây nhé!\n"),
+    );
     return;
   }
 
@@ -579,7 +499,6 @@ async function viewHistory() {
         choices: [
           { name: "🎬  Chỉ kịch bản", value: "script" },
           { name: "✍️  Chỉ mô tả", value: "description" },
-          { name: "🚀  Full workflow", value: "full" },
         ],
       },
     ]);
@@ -587,8 +506,6 @@ async function viewHistory() {
       await generateScriptFlow();
     } else if (workflow === "description") {
       await generateDescriptionFlow();
-    } else if (workflow === "full") {
-      await generateFullFlow();
     }
   }
 }
@@ -596,10 +513,26 @@ async function viewHistory() {
 // ── Manage Products ──
 
 async function manageProducts() {
+  console.log(
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    chalk.bold.cyan("║   📦  PRODUCTS - Quản lý sản phẩm đã lưu          ║"),
+  );
+  console.log(
+    chalk.bold.cyan("║       Xem, xóa & tái sử dụng sản phẩm              ║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
+  );
+
   const products = await getProducts();
 
   if (products.length === 0) {
     console.log(chalk.yellow("\n📦 Chưa có sản phẩm nào được lưu.\n"));
+    console.log(
+      chalk.gray("💡 Mẹo: Nhập sản phẩm khi tạo nội dung để lưu tự động!\n"),
+    );
     return;
   }
 
@@ -663,7 +596,18 @@ async function manageProducts() {
 // ── TTS Voice Generation ──
 
 async function generateTTSFromScript() {
-  console.log(chalk.bold.cyan("\n🎤 TẠO GIỌNG NÓI AI TỪ KỊCH BẢN\n"));
+  console.log(
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    chalk.bold.cyan("║   🎤  TTS VOICE - Chuyển kịch bản thành giọng nói  ║"),
+  );
+  console.log(
+    chalk.bold.cyan("║       Giọng đọc AI tiếng Việt - Tự nhiên, truyền cảm║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
+  );
 
   // Get script: either from history or generate new
   const history = await getHistory();
@@ -781,13 +725,16 @@ async function generateTTSFromScript() {
 
 async function generateTrendScanFlow() {
   console.log(
-    chalk.bold.cyan("\n╔═══════════════════════════════════════════════╗"),
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
   );
   console.log(
-    chalk.bold.cyan("║   🚀  AUTO SCAN & GENERATE - Trending Content  ║"),
+    chalk.bold.cyan("║   🔍  TREND RESEARCHER - Nghiên cứu xu hướng      ║"),
   );
   console.log(
-    chalk.bold.cyan("╚═══════════════════════════════════════════════╝\n"),
+    chalk.bold.cyan("║       Tìm sản phẩm HOT - Phân tích ngách thị trường  ║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
   );
 
   // Ask user: auto or pick niche
@@ -820,9 +767,9 @@ async function generateTrendScanFlow() {
   }
 
   const scanner = new AutonomousTrendScanner();
-  await scanner.scanAndGenerate(niche);
+  const { brief, product } = await scanner.scanAndGenerate(niche);
 
-  // Post-actions
+  // Post-actions: hỏi user muốn làm gì tiếp
   while (true) {
     const { action } = await inquirer.prompt([
       {
@@ -830,8 +777,8 @@ async function generateTrendScanFlow() {
         name: "action",
         message: "Làm gì tiếp theo?",
         choices: [
-          { name: "📋  Copy vào clipboard", value: "copy" },
-          { name: "💾  Xuất ra file txt", value: "export" },
+          { name: "🎬  Tạo kịch bản video từ sản phẩm này", value: "script" },
+          { name: "✍️  Tạo mô tả bài đăng", value: "description" },
           { name: "🔍  Scan niche khác", value: "rescan" },
           { name: "⏭️  Quay lại menu chính", value: "menu" },
         ],
@@ -839,15 +786,61 @@ async function generateTrendScanFlow() {
     ]);
 
     if (action === "menu") return;
+
     if (action === "rescan") {
       await generateTrendScanFlow();
       return;
     }
-    // copy and export would need the content, skip for now
-    if (action === "copy" || action === "export") {
+
+    if (action === "script") {
+      const platform = await selectPlatform();
       console.log(
-        chalk.yellow("💡 Hint: Copy từ lịch sử hoặc export file txt nhé.\n"),
+        chalk.yellow("\n⚙️ Đang tạo kịch bản video từ sản phẩm trend...\n"),
       );
+
+      const videoCreator = new VideoCreatorAgent();
+      const script = await generateWithRetry(
+        () => videoCreator.generateScript(product, platform),
+        (s) => validateScript(s),
+      );
+
+      console.log(formatScriptOutput(script));
+
+      const content: GeneratedContent = { product, script };
+      await saveToHistory(product, content, "script");
+
+      await handlePostActions("script", content);
+      return;
+    }
+
+    if (action === "description") {
+      const platform = await selectPlatform();
+      const { scriptSummary } = await inquirer.prompt([
+        {
+          type: "input",
+          name: "scriptSummary",
+          message: "📝 Tóm tắt nội dung video (hoặc paste kịch bản):",
+          validate: (input: string) =>
+            input.trim().length > 0 ? true : "Vui lòng nhập nội dung",
+        },
+      ]);
+
+      console.log(chalk.yellow("\n⚙️ Đang tạo mô tả bài đăng...\n"));
+
+      const marketingWriter = new MarketingWriterAgent();
+      const description = await generateWithRetry(
+        () =>
+          marketingWriter.generateDescription(product, scriptSummary, platform),
+        (d) => validateDescription(d),
+      );
+
+      console.log(formatDescriptionOutput(description));
+
+      const content: GeneratedContent = { product, description };
+      await saveToHistory(product, content, "description");
+
+      await handlePostActions("description", content);
+      return;
     }
   }
 }
@@ -855,37 +848,52 @@ async function generateTrendScanFlow() {
 // ── Main Menu ──
 
 async function askMainMenu(): Promise<string> {
-  console.log(chalk.bold.cyan("\n╔════════════════════════════════════════╗"));
-  console.log(chalk.bold.cyan("║   🤖  AFFILIATE BOT CLI - MAIN MENU    ║"));
-  console.log(chalk.bold.cyan("╚════════════════════════════════════════╝\n"));
+  console.log(
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    chalk.bold.cyan("║       🤖  AFFILIATE MARKETING BOT - AI POWERED      ║"),
+  );
+  console.log(
+    chalk.bold.cyan("║           Tự động hóa nội dung Affiliate            ║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
+  );
+
+  console.log(chalk.bold.yellow("\n📌 TÍNH NĂNG CHÍNH:\n"));
 
   const { action } = await inquirer.prompt([
     {
       type: "rawlist",
       name: "action",
-      message: "Nhập số để chọn:",
+      message: "👉 Chọn thao tác bạn muốn thực hiện:",
       choices: [
+        new inquirer.Separator(" 🔍 Nghiên cứu & Phân tích xu hướng "),
         {
-          name: "🚀  Auto Scan & Generate - Quét trend & tạo nội dung",
+          name: "[Trend Researcher] - Quét trend, tìm sản phẩm hot theo ngách",
           value: "trendscan",
         },
-        { name: "🎬  Video Creator - Tạo kịch bản video", value: "script" },
+        new inquirer.Separator(" ✍️ Tạo nội dung với AI "),
         {
-          name: "✍️  Marketing Writer - Tạo mô tả bài đăng",
+          name: "[Video Creator] - Tạo kịch bản video TikTok/YouTube",
+          value: "script",
+        },
+        {
+          name: "[Marketing Writer] - Tạo caption & hashtags bài đăng",
           value: "description",
         },
+        new inquirer.Separator(" 🎨 Tiện ích & Quản lý "),
         {
-          name: "🚀  Full Workflow - Kịch bản + Mô tả (tự động)",
-          value: "full",
-        },
-        {
-          name: "🎤  Tạo voice từ kịch bản (AI Text-to-Speech)",
+          name: "[TTS Voice] - Chuyển kịch bản thành giọng nói AI",
           value: "tts",
         },
-        { name: "📜  Xem lịch sử đã tạo", value: "history" },
-        { name: "📦  Quản lý sản phẩm đã lưu", value: "products" },
-        { name: "🔄  Kiểm tra kết nối AI", value: "check" },
-        { name: "❌  Thoát", value: "exit" },
+        { name: "[History] - Xem & quản lý nội dung đã tạo", value: "history" },
+        { name: "[Products] - Xem & quản lý sản phẩm", value: "products" },
+        new inquirer.Separator(" ⚙️ Hệ thống "),
+        { name: "[System] - Kiểm tra kết nối AI providers", value: "check" },
+        new inquirer.Separator(""),
+        { name: "❌  Thoát chương trình", value: "exit" },
       ],
     },
   ]);
@@ -896,6 +904,11 @@ async function askMainMenu(): Promise<string> {
 // ── Main Loop ──
 
 async function mainLoop() {
+  console.log(
+    chalk.bold.magenta("\n👋 Chào mừng bạn đến với Affiliate Marketing Bot!"),
+  );
+  console.log(chalk.gray("   Công cụ tự động tạo nội dung Affiliate với AI\n"));
+
   await checkProvidersStatus();
 
   while (true) {
@@ -915,8 +928,6 @@ async function mainLoop() {
       await generateScriptFlow();
     } else if (action === "description") {
       await generateDescriptionFlow();
-    } else if (action === "full") {
-      await generateFullFlow();
     } else if (action === "trendscan") {
       await generateTrendScanFlow();
     } else if (action === "tts") {
