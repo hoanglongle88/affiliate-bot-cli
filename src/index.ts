@@ -35,7 +35,7 @@ import {
   deleteProduct,
   exportToTextFile,
 } from "./data/storage";
-import { TTSService, VoiceType } from "./services/tts-service";
+import { TTSService } from "./services/tts-service";
 import { NICHES, getNicheById, getRandomNiche } from "./config/niches";
 import fs from "fs";
 
@@ -719,7 +719,7 @@ async function generateTTSFromScript() {
     chalk.bold.cyan("║   🎤  TTS VOICE - Chuyển kịch bản thành giọng nói  ║"),
   );
   console.log(
-    chalk.bold.cyan("║       Giọng đọc AI tiếng Việt - Tự nhiên, truyền cảm║"),
+    chalk.bold.cyan("║       Google Text-to-Speech (Tiếng Việt)           ║"),
   );
   console.log(
     chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
@@ -790,25 +790,11 @@ async function generateTTSFromScript() {
 
   if (!scriptContent) return;
 
-  // Select voice
   const tts = new TTSService();
-  const { voice } = await inquirer.prompt([
-    {
-      type: "rawlist",
-      name: "voice",
-      message: "🎤 Chọn giọng đọc:",
-      choices: tts.getAvailableVoices(),
-      default: "gtts-vi",
-    },
-  ]);
 
-  // Generate TTS
-  console.log(chalk.yellow("\n🎤 Đang tạo giọng nói AI...\n"));
+  console.log(chalk.yellow("\n🎤 Đang tạo giọng nói AI (Google TTS)...\n"));
 
-  const { audioPath, duration } = await tts.textToSpeech(
-    scriptContent.body, // body = full merged script (hook + body + cta)
-    voice as VoiceType,
-  );
+  const { audioPath, duration } = await tts.textToSpeech(scriptContent.body);
 
   console.log(chalk.green(`\n💾 File voice đã tạo: ${audioPath}`));
   console.log(chalk.cyan(`📊 Thời lượng: ~${Math.round(duration)} giây\n`));
@@ -821,7 +807,7 @@ async function generateTTSFromScript() {
       message: "Làm gì tiếp theo?",
       choices: [
         { name: "▶️  Mở file voice vừa tạo", value: "open" },
-        { name: "🎤  Tạo voice khác (đổi giọng)", value: "again" },
+        { name: "🔄  Tạo voice từ script khác", value: "again" },
         { name: "⏭️  Quay lại menu chính", value: "menu" },
       ],
     },
@@ -1003,7 +989,7 @@ async function askMainMenu(): Promise<string> {
         },
         new inquirer.Separator(" 🎨 Tiện ích & Quản lý "),
         {
-          name: "[TTS Voice] - Chuyển kịch bản thành giọng nói AI",
+          name: "[TTS Voice] - Chuyển kịch bản thành giọng nói (Google TTS)",
           value: "tts",
         },
         { name: "[History] - Xem & quản lý nội dung đã tạo", value: "history" },
