@@ -1,0 +1,46 @@
+{
+  "name": "affiliate-bot-cli",
+  "version": "1.0.0",
+  "description": "🤖 Bot CLI - Công cụ Affiliate Marketing tự động với AI",
+  "main": "dist/index.js",
+  "bin": {
+    "affiliate-bot": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "migrate": "ts-node src/migrate.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "affiliate",
+    "marketing",
+    "ai",
+    "ollama",
+    "tts",
+    "text-to-speech",
+    "tiktok",
+    "youtube"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@google/genai": "^1.48.0",
+    "@supabase/supabase-js": "^2.101.1",
+    "@types/inquirer": "^9.0.9",
+    "chalk": "^5.6.2",
+    "clipboardy": "^5.3.1",
+    "commander": "^14.0.3",
+    "dotenv": "^17.4.0",
+    "gtts": "^0.2.1",
+    "inquirer": "^13.3.2",
+    "ollama": "^0.6.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
+  }
+}
