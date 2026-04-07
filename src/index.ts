@@ -33,6 +33,7 @@ import {
   clearHistory,
   HistoryEntry,
   deleteProduct,
+  deleteAllProducts,
   exportToTextFile,
 } from "./data/storage";
 import { TTSService } from "./services/tts-service";
@@ -219,14 +220,15 @@ async function editText(currentText: string, label: string): Promise<string> {
 async function handlePostActions(
   type: "script" | "description",
   content: GeneratedContent,
-) {
+): Promise<"back" | "menu"> {
   while (true) {
     const choices = [
       { name: "📋  Copy vào clipboard", value: "copy" },
       { name: "💾  Xuất ra file txt", value: "export" },
       { name: "✏️  Chỉnh sửa nội dung", value: "edit" },
       { name: "🔄  Tạo lại (regenerate)", value: "regenerate" },
-      { name: "⏭️  Quay lại menu chính", value: "menu" },
+      { name: "⏮️  Quay lại bước trước", value: "back" },
+      { name: "⏭️  Về menu chính", value: "menu" },
     ];
 
     const { action } = await inquirer.prompt([
@@ -238,7 +240,8 @@ async function handlePostActions(
       },
     ]);
 
-    if (action === "menu") return;
+    if (action === "menu") return "menu";
+    if (action === "back") return "back";
 
     if (action === "copy") {
       const text =
@@ -305,7 +308,7 @@ async function handlePostActions(
       } else if (type === "description") {
         await generateDescriptionFlow();
       }
-      return; // regenerate sẽ gọi lại flow, không loop tiếp
+      return "menu";
     }
   }
 }
@@ -457,7 +460,7 @@ async function generateImageBriefFlow() {
           { name: "📋  Copy prompts vào clipboard", value: "copy" },
           { name: "💾  Xuất brief ra file txt", value: "export" },
           { name: "🔄  Tạo lại brief khác", value: "regenerate" },
-          { name: "⏭️  Quay lại menu chính", value: "menu" },
+          { name: "⏭️  Về menu chính", value: "menu" },
         ],
       },
     ]);
@@ -542,6 +545,8 @@ async function viewHistory() {
     };
   });
 
+  choices.push({ name: "─".repeat(40), value: "sep" });
+  choices.push({ name: "🗑️  Xóa TOÀN BỘ lịch sử", value: "clearAll" });
   choices.push({ name: "❌  Quay lại", value: "back" });
 
   const { selected } = await inquirer.prompt([
@@ -554,6 +559,22 @@ async function viewHistory() {
   ]);
 
   if (selected === "back") return;
+
+  if (selected === "clearAll") {
+    const { confirm } = await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "confirm",
+        message: `⚠️  Xác nhận xóa TOÀN BỘ lịch sử? (Không thể hoàn tác)`,
+        default: false,
+      },
+    ]);
+    if (confirm) {
+      await clearHistory();
+      console.log(chalk.green("\n🗑️  Đã xóa toàn bộ lịch sử\n"));
+    }
+    return;
+  }
 
   const entry = history.find((h: HistoryEntry) => h.id === selected);
   if (!entry) return;
@@ -657,6 +678,8 @@ async function manageProducts() {
     value: p.id,
   }));
 
+  choices.push({ name: "─".repeat(40), value: "sep" });
+  choices.push({ name: "🗑️  Xóa TOÀN BỘ sản phẩm", value: "deleteAll" });
   choices.push({ name: "❌  Quay lại", value: "back" });
 
   const { selected } = await inquirer.prompt([
@@ -669,6 +692,22 @@ async function manageProducts() {
   ]);
 
   if (selected === "back") return;
+
+  if (selected === "deleteAll") {
+    const { confirm } = await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "confirm",
+        message: `⚠️  Xác nhận xóa TOÀN BỘ ${products.length} sản phẩm? (Không thể hoàn tác)`,
+        default: false,
+      },
+    ]);
+    if (confirm) {
+      const count = await deleteAllProducts();
+      console.log(chalk.green(`\n🗑️  Đã xóa ${count} sản phẩm\n`));
+    }
+    return;
+  }
 
   const product = products.find((p) => p.id === selected);
   if (!product) return;
@@ -687,10 +726,17 @@ async function manageProducts() {
       message: "Làm gì tiếp theo?",
       choices: [
         { name: "🗑️  Xóa sản phẩm này", value: "delete" },
-        { name: "⏭️  Quay lại", value: "back" },
+        { name: "⏮️  Quay lại danh sách", value: "back" },
+        { name: "⏭️  Về menu chính", value: "menu" },
       ],
     },
   ]);
+
+  if (action === "menu") return;
+  if (action === "back") {
+    await manageProducts();
+    return;
+  }
 
   if (action === "delete") {
     const { confirm } = await inquirer.prompt([
