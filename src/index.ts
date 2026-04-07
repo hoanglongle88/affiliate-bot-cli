@@ -14,6 +14,7 @@ import { VideoCreatorAgent } from "./agents/video-creator";
 import { MarketingWriterAgent } from "./agents/marketing-writer";
 import { AutonomousTrendScanner } from "./agents/trend-scanner";
 import { ImageCreatorAgent } from "./agents/image-creator";
+import { ImagePromptInput } from "./prompts/image-creator";
 import {
   formatScriptOutput,
   formatDescriptionOutput,
@@ -433,18 +434,17 @@ async function generateImageBriefFlow() {
     },
   ]);
 
-  const niche = ""; // Auto-detect from product name or leave generic
+  const input: ImagePromptInput = {
+    name: product.name,
+    category: "Đa ngành hàng",
+    adPlatform: adPlatform,
+    aspectRatio: aspectRatio,
+    mainMessage: product.description.substring(0, 200),
+    price: product.price,
+  };
+
   const agent = new ImageCreatorAgent();
-
-  const brief = await agent.generateBrief(
-    product.name,
-    niche || "Đa ngành hàng",
-    adPlatform,
-    aspectRatio,
-    product.description.substring(0, 200),
-    product.price,
-  );
-
+  const brief = await agent.generateBrief(input);
   agent.displayBrief(brief);
 
   while (true) {

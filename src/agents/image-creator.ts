@@ -4,57 +4,32 @@ import {
   IMAGE_PROMPT_SYSTEM,
   buildImagePromptUserPrompt,
   ImagePromptInput,
-} from "../prompts/video-creator";
+  ImagePromptOutput,
+} from "../prompts/image-creator";
 
-const CATEGORY_MAP: Record<string, string> = {
-  "gia-dung": "Đồ gia dụng nhà bếp",
-  "thoi-trang-nu": "Thời trang nữ",
-  "thoi-trang-nam": "Thời trang nam",
-  "cong-nghe": "Đồ công nghệ & phụ kiện",
-  "my-pham": "Mỹ phẩm & skincare",
-  "suc-khoe": "Sức khỏe & thực phẩm chức năng",
-  "me-va-be": "Mẹ và bé",
-  "nha-cua": "Nhà cửa & đồ nội thất",
-  "the-thao": "Thể thao & dã ngoại",
-  "thu-cung": "Thú cưng",
-  "oto-xe-may": "Ô tô & xe máy",
-  "do-an": "Đồ ăn & snack",
+const DEFAULT_BRIEF: ImagePromptOutput = {
+  adFormat: "feed-square",
+  visualStyle: "Product photography, clean background",
+  colorPalette: ["#FFFFFF", "#F5F5F5", "#333333"],
+  prompts: {
+    safe: "Professional product photo, clean white background, studio lighting",
+    bold: "Eye-catching product, dramatic lighting, vibrant colors, stop-scroll visual",
+    lifestyle:
+      "Product in real-life setting, natural lighting, lifestyle photography",
+  },
+  negativePrompt: "blurry, text overlay, watermark, low quality, pixelated",
+  shootingNotes: "Chụp sản phẩm trên nền trắng, ánh sáng studio, góc 45 độ",
 };
 
-export interface ImageBrief {
-  adFormat: string;
-  visualStyle: string;
-  colorPalette: string[];
-  prompts: {
-    safe: string;
-    bold: string;
-    lifestyle: string;
-  };
-  negativePrompt: string;
-  shootingNotes: string;
-}
+export { ImagePromptOutput as ImageBrief };
 
 export class ImageCreatorAgent {
-  async generateBrief(
-    productName: string,
-    category: string,
-    adPlatform: string,
-    aspectRatio: string,
-    mainMessage: string,
-    price?: string,
-  ): Promise<ImageBrief> {
+  async generateBrief(input: ImagePromptInput): Promise<ImagePromptOutput> {
     console.log(
-      chalk.yellow("🎨 Đang phân tích & tạo creative brief ảnh ads...\n"),
+      chalk.yellow(
+        `🎨 Đang tạo creative brief cho ${input.adPlatform.toUpperCase()}...\n`,
+      ),
     );
-
-    const input: ImagePromptInput = {
-      name: productName,
-      category,
-      adPlatform: adPlatform as any,
-      aspectRatio: aspectRatio as any,
-      mainMessage,
-      price,
-    };
 
     const userPrompt = buildImagePromptUserPrompt(input);
     const response = await callAI(IMAGE_PROMPT_SYSTEM, userPrompt);
@@ -62,8 +37,11 @@ export class ImageCreatorAgent {
     return this.parseResponse(response);
   }
 
-  private parseResponse(text: string): ImageBrief {
-    let cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+  private parseResponse(text: string): ImagePromptOutput {
+    let cleaned = text
+      .replace(/```json\s*/g, "")
+      .replace(/```\s*/g, "")
+      .trim();
 
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     if (jsonMatch) cleaned = jsonMatch[0];
@@ -71,31 +49,24 @@ export class ImageCreatorAgent {
     try {
       return JSON.parse(cleaned);
     } catch {
-      console.log(chalk.yellow("⚠️  Không parse được JSON, trả về text thô\n"));
-      return {
-        adFormat: "feed-square",
-        visualStyle: "Product photography, clean background",
-        colorPalette: ["#FFFFFF", "#F5F5F5", "#333333"],
-        prompts: {
-          safe: "Professional product photo, clean white background, studio lighting",
-          bold: "Eye-catching product, dramatic lighting, vibrant colors",
-          lifestyle: "Product in real-life setting, natural lighting",
-        },
-        negativePrompt: "blurry, text, watermark, low quality",
-        shootingNotes: "Chụp trên nền trắng, ánh sáng studio, góc 45 độ",
-      };
+      console.log(
+        chalk.yellow("⚠️  Không parse được JSON, dùng dữ liệu mặc định\n"),
+      );
+      return DEFAULT_BRIEF;
     }
   }
 
-  displayBrief(brief: ImageBrief): void {
-    console.log(chalk.bold.cyan("\n📸 CREATIVE BRIEF — Ảnh quảng cáo sản phẩm"));
+  displayBrief(brief: ImagePromptOutput): void {
+    console.log(
+      chalk.bold.cyan("\n📸 CREATIVE BRIEF — Ảnh quảng cáo sản phẩm"),
+    );
     console.log(chalk.cyan("─".repeat(50)));
 
     console.log(chalk.bold("\n🎬 Format: ") + brief.adFormat);
     console.log(chalk.bold("🎨 Visual style: ") + brief.visualStyle);
 
     console.log(chalk.bold("\n🎨 Bảng màu đề xuất:"));
-    brief.colorPalette.forEach((c) => console.log(`   ${c} ████`));
+    brief.colorPalette.forEach((c) => console.log(chalk.white(`   ${c} ████`)));
 
     console.log(chalk.bold("\n📝 3 Image Prompts:"));
     console.log(chalk.green("   1️⃣  SAFE: ") + brief.prompts.safe);
