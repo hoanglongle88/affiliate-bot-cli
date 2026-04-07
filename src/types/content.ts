@@ -1,4 +1,17 @@
-export type Platform = "tiktok" | "youtube";
+export type Platform =
+  | "tiktok"
+  | "youtube"
+  | "facebook_reels"
+  | "instagram_reels"
+  | "facebook_ads";
+
+export const PLATFORM_LABELS: Record<Platform, string> = {
+  tiktok: "TikTok",
+  youtube: "YouTube Shorts",
+  facebook_reels: "Facebook Reels",
+  instagram_reels: "Instagram Reels",
+  facebook_ads: "Facebook Ads",
+};
 
 export interface ProductInfo {
   name: string;

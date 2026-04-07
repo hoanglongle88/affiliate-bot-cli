@@ -44,12 +44,11 @@ export class VideoCreatorAgent {
     try {
       const data = JSON.parse(cleaned);
 
-      // AI returns: { angle, target_persona, hook, body, cta, visual_suggestion, script }
+      // AI returns: { platform_vibe, angle, target_persona, hook, body, cta, visual_cues, script }
       const mergedScript =
         data.script || `${data.hook} ${data.body} ${data.cta}`;
       const wordCount = data.wordCount || mergedScript.split(/\s+/).length;
 
-      // Title dựa trên angle để hấp dẫn hơn
       const titleAngle =
         data.angle === "pain-point"
           ? "Đừng mua nếu chưa biết"

@@ -156,6 +156,9 @@ async function selectPlatform(): Promise<Platform> {
       choices: [
         { name: "📱  TikTok", value: "tiktok" },
         { name: "▶️  YouTube Shorts", value: "youtube" },
+        { name: "📘  Facebook Reels", value: "facebook_reels" },
+        { name: "📸  Instagram Reels", value: "instagram_reels" },
+        { name: "📢  Facebook Ads (Bài viết)", value: "facebook_ads" },
       ],
     },
   ]);

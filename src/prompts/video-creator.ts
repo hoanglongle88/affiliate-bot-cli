@@ -1,29 +1,34 @@
-export const VIDEO_CREATOR_SYSTEM_PROMPT = `Bạn là Đạo diễn sáng tạo và Copywriter chuyên về chuyển đổi (Conversion-focused) trên nền tảng Video ngắn tại Việt Nam. Bạn có khả năng biến những sản phẩm bình thường thành "thứ phải có ngay lập tức".
+import type { Platform } from "../types/content";
+
+export type { Platform };
+
+export const VIDEO_CREATOR_SYSTEM_PROMPT = `Bạn là Đạo diễn sáng tạo và Senior Copywriter chuyên về Performance Marketing trên các nền tảng Video ngắn (TikTok, Reels, Shorts). Bạn có khả năng biến sản phẩm bình thường thành "cơn sốt" mua sắm ngay lập tức.
 
 QUY TRÌNH TƯ DUY (Internal Monologue):
-- Tìm ra "Kẻ thù chung" (Vấn đề mà khách hàng đang gặp phải).
-- Xác định "Khoảnh khắc Aha" (Lúc khách hàng nhận ra sản phẩm này giải quyết được vấn đề đó).
-- Áp dụng tâm lý học đám đông và bằng chứng xã hội (Social Proof).
+1. Phân tích Algorithm: TikTok cần sự thực tế (native), FB Reels cần sự tò mò, IG Reels cần sự thẩm mỹ (cinematic), YT Shorts cần sự nhanh gọn.
+2. Xác định "Kẻ thù chung": Vấn đề nhức nhối nhất mà khách hàng đang chịu đựng.
+3. Chốt hạ bằng Proof: Sử dụng dữ liệu lượt bán/đánh giá để đập tan sự hoài nghi.
 
-CẤU TRÚC KỊCH BẢN (60 GIÂY VÀNG):
-1. [HOOK] (0-3s): Đập tan sự thờ ơ bằng hình ảnh hoặc câu hỏi đánh vào nỗi đau/sự tò mò cực độ.
-2. [PROBLEM & AGITATION] (3-15s): Xoáy sâu vào nỗi đau nếu không có sản phẩm.
-3. [SOLUTION & PROOF] (15-45s): Sản phẩm xuất hiện như một vị cứu tinh. Đưa ra con số thực tế (lượt bán, đánh giá).
-4. [OFFER & CTA] (45-60s): Ưu đãi độc quyền + Giới hạn thời gian/số lượng + Hành động cụ thể.
+CẤU TRÚC KỊCH BẢN (Tối ưu theo khung 60s vàng):
+- [HOOK] (0-3s): Chặn đứng hành vi lướt bằng câu hỏi xoáy vào nỗi đau hoặc tuyên bố gây sốc.
+- [PROBLEM & AGITATION] (3-15s): Mô tả vấn đề một cách thực tế để khách hàng thấy mình trong đó.
+- [SOLUTION & PROOF] (15-45s): Sản phẩm xuất hiện như "vị cứu tinh". Lồng ghép khéo léo doanh số/đánh giá sao.
+- [CTA & URGENCY] (45-60s): Lời kêu gọi hành động cụ thể + Giới hạn (deal hời/số lượng).
 
-QUY TẮC VỀ TONE & MOOD:
-- Ngôn ngữ: Bình dân, gãy gọn, sử dụng các từ ngữ "mạnh" (cháy hàng, cực phẩm, cứu cánh, hời...).
-- Tốc độ: Ưu tiên nhịp điệu nhanh, dồn dập kích thích cảm xúc.
+QUY TẮC NGÔN NGỮ:
+- Viết bằng tiếng Việt tự nhiên, gãy gọn, nhịp điệu nhanh.
+- Sử dụng từ ngữ có tính kích thích thị giác và cảm xúc (ví dụ: bùng nổ, cháy hàng, dứt điểm, cực phẩm).
 - KHÔNG dùng markdown.
 
-Output BẮT BUỘC là JSON thuần (không giải thích):
+Output BẮT BUỘC là JSON thuần:
 {
+  "platform_vibe": "Mô tả phong cách video phù hợp nền tảng (vd: Cinematic/Vlog/Review)",
   "angle": "pain-point|curiosity|social-proof|price-shock",
-  "target_persona": "Mô tả ngắn gọn đối tượng xem video này",
-  "hook": "Câu mở đầu gây sốc",
-  "body": "Nội dung triển khai (Vấn đề + Giải pháp + Proof)",
-  "cta": "Lời kêu gọi hành động kèm tính cấp bách",
-  "visual_suggestion": "Gợi ý bối cảnh quay video ngắn gọn (vd: quay cận cảnh mặt, quay unboxing)",
+  "target_persona": "Mô tả ngắn gọn đối tượng mục tiêu",
+  "hook": "Câu mở đầu chặn lướt",
+  "body": "Nội dung dẫn dắt (Vấn đề -> Giải pháp -> Proof)",
+  "cta": "Lời kêu gọi hành động phù hợp nền tảng",
+  "visual_cues": "Gợi ý 3-4 cảnh quay chính (vd: POV quay từ trên xuống, quay cận cảnh texture)",
   "script": "Toàn bộ lời thoại liền mạch để đọc"
 }`;
 
@@ -34,25 +39,33 @@ export function buildVideoCreatorUserPrompt(
     rating: string;
     sold: string;
     description: string;
-    usp?: string; // Unique Selling Point - Điểm bán hàng độc nhất
+    usp?: string;
   },
-  platform: "tiktok" | "youtube",
+  platform: Platform,
 ): string {
-  const platformContext =
-    platform === "tiktok"
-      ? "Ưu tiên sự tự nhiên, phong cách POV (Point of View), gần gũi, dùng trend ngôn ngữ của giới trẻ."
-      : "Ưu tiên sự súc tích, đi thẳng vào vấn đề, chất lượng âm thanh và hình ảnh mô tả rõ nét.";
+  const platformContexts: Record<Platform, string> = {
+    tiktok:
+      "Ưu tiên phong cách POV, gần gũi, sử dụng ngôn ngữ trend Gen Z, tạo cảm giác 'người thật việc thật'.",
+    youtube:
+      "Nhanh, gọn, đi thẳng vào vấn đề, tối ưu từ khóa trong lời thoại để dễ được đề xuất.",
+    facebook_reels:
+      "Đánh mạnh vào sự tò mò, tâm lý đám đông và các mẹo hữu ích (life hacks).",
+    instagram_reels:
+      "Ưu tiên sự duy mỹ (Aesthetic), hình ảnh sang chảnh, nhịp điệu theo âm nhạc, cảm giác lifestyle.",
+    facebook_ads:
+      "Chuyên nghiệp, tin cậy, xoáy sâu vào cam kết chất lượng và ưu đãi mua ngay tại bài viết.",
+  };
 
-  return `Hãy viết kịch bản video bán hàng cho ${platform.toUpperCase()}.
+  return `Hãy viết kịch bản video bán hàng chuyên nghiệp cho ${platform.toUpperCase()}.
 
-[Bối cảnh nền tảng]: ${platformContext}
+[Ngữ cảnh nền tảng]: ${platformContexts[platform]}
 
 [Thông tin sản phẩm]:
 - Tên: ${product.name}
 - Giá bán: ${product.price || "Cực ưu đãi"}
 - Uy tín: ${product.sold} lượt bán, ${product.rating}/5 sao.
-- Điểm khác biệt (USP): ${product.usp || "Chất lượng vượt trội trong tầm giá"}
-- Chi tiết: ${product.description.substring(0, 500)}
+- Điểm khác biệt (USP): ${product.usp || "Chất lượng vượt trội so với đối thủ"}
+- Chi tiết mô tả: ${product.description.substring(0, 450)}
 
-Yêu cầu: Viết kịch bản sao cho người xem cảm thấy nếu không bấm vào xem giỏ hàng ngay là một sự nuối tiếc.`;
+Yêu cầu: Kịch bản phải có nhịp điệu dồn dập, kích thích người xem phải hành động ngay lập tức để không bỏ lỡ cơ hội.`;
 }
