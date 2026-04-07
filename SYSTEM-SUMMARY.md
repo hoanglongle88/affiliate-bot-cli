@@ -1,432 +1,359 @@
-# 🤖 Affiliate Bot CLI - Tóm tắt chức năng hệ thống
+# 🤖 Affiliate Bot CLI - Tóm tắt hệ thống
 
 ## 📋 Tổng quan
 
-**Affiliate Bot CLI** là công cụ tự động tạo nội dung affiliate marketing sử dụng AI (Ollama local hoặc Google Gemini cloud) để tạo kịch bản video và mô tả bài đăng cho tiếp thị liên kết trên TikTok và YouTube Shorts.
+**Affiliate Bot CLI** là công cụ tự động tạo nội dung affiliate marketing sử dụng AI (Ollama local hoặc Google Gemini cloud) để tạo kịch bản video, mô tả bài đăng, creative brief ảnh ads và giọng nói AI cho TikTok và YouTube Shorts.
 
 ---
 
-## 🎯 7 Chức năng chính của hệ thống
+## 🎯 8 Chức năng chính
 
-### 1. **Trend Researcher (Nghiên cứu xu hướng)** 🔍
+### 1. 🔍 Trend Researcher — Nghiên cứu xu hướng
 
 **Workflow:** `trendscan`
 
-- Tự động quét sản phẩm trending bằng nghiên cứu web AI
-- Chọn niche (tự động hoặc chọn thủ công từ 12 niches có sẵn)
-- Nghiên cứu sản phẩm thực tế đang hot trên các sàn thương mại điện tử Việt Nam
-- Tạo Trend Brief hoàn chỉnh với thông tin sản phẩm, hook, hashtags, CTA
+- Tự động quét sản phẩm trending bằng AI research web
+- Chọn niche: Tự động (AI chọn) hoặc Thủ công (12 niches có sẵn)
+- Tạo **Trend Brief**: tên SP, giá, rating, lượt bán, trend %, hook, hashtags, pain point
 - Tự động lưu sản phẩm để tái sử dụng
-- **Hỏi user muốn làm gì tiếp:**
-  - 🎬 Tạo kịch bản video từ sản phẩm này
+- **Sau research, user tự chọn:**
+  - 🎬 Tạo kịch bản video
   - ✍️ Tạo mô tả bài đăng
   - 🔍 Scan niche khác
-  - ⏭️ Quay lại menu chính
+  - ⏭️ Quay lại menu
 
-### 2. **Video Creator (Tạo kịch bản video)** 🎬
+### 2. 🎬 Video Creator — Tạo kịch bản video
 
 **Workflow:** `script`
 
-- Người dùng chọn/nhập sản phẩm
-- Chọn nền tảng (TikTok hoặc YouTube Shorts)
-- AI tạo kịch bản video hấp dẫn 30-60 giây
-- Bao gồm: Hook (3s), Body (30-45s), và CTA (5s)
-- Có cơ chế validate và tự thử lại nếu output chưa đạt chuẩn
-- Tùy chọn: Copy, Export, Chỉnh sửa, hoặc Tạo lại
+- Chọn/nhập sản phẩm → Chọn nền tảng (TikTok/YouTube)
+- AI tạo kịch bản 80-120 từ (45-60 giây)
+- Cấu trúc: Hook (3-5s) + Body (30-45s) + CTA (5s)
+- Validate + auto-retry tối đa 2 lần
+- Post-actions: Copy / Export / Chỉnh sửa / Tạo lại / Menu
 
-### 3. **Marketing Writer (Tạo mô tả bài đăng)** ✍️
+### 3. ✍️ Marketing Writer — Tạo mô tả bài đăng
 
 **Workflow:** `description`
 
-- Người dùng chọn/nhập sản phẩm
-- Cung cấp tóm tắt nội dung video hoặc kịch bản
-- AI tạo caption bài đăng tối ưu (150-250 từ)
-- Bao gồm: Câu hook, lợi ích nổi bật, social proof, urgency, CTA và 5-7 hashtags
-- Tối ưu cho thuật toán TikTok/YouTube
+- Chọn/nhập sản phẩm → Chọn nền tảng → Nhập tóm tắt video
+- AI tạo caption 150-250 từ với hashtags
+- Cấu trúc: Hook → Sản phẩm + lợi ích → Urgency → CTA + Hashtags
+- Post-actions: Copy / Export / Chỉnh sửa / Tạo lại / Menu
 
-### 4. **Text-to-Speech (Tạo giọng nói AI)** 🎤
+### 4. 🎨 Image Creator — Creative brief ảnh ads
+
+**Workflow:** `imagebrief`
+
+- Chọn sản phẩm → Chọn nền tảng ads → Chọn tỷ lệ ảnh
+- AI tạo creative brief:
+  - Ad format (feed-square / story-vertical / banner-horizontal)
+  - Visual style + bảng màu (3 hex colors)
+  - 3 Image Prompts: Safe / Bold / Lifestyle
+  - Negative prompt + Shooting notes
+- Post-actions: Copy prompts / Export brief / Tạo lại / Menu
+
+### 5. 🎤 TTS Voice — Chuyển kịch bản thành giọng nói
 
 **Workflow:** `tts`
 
-- Chuyển đổi kịch bản thành giọng nói AI
-- Nhiều giọng đọc tiếng Việt (gTTS)
-- Tạo file audio từ kịch bản (Hook + Body + CTA)
-- Lưu file audio vào thư mục `/output/audio/`
-- Có thể phát lại giọng nói vừa tạo
+- Chọn script từ history hoặc tạo mới
+- Chọn giọng: macOS Linh hoặc Google TTS Vietnamese
+- Tạo file audio từ Hook + Body + CTA
+- Lưu vào `/output/audio/`
+- Post-actions: Mở file / Tạo giọng khác / Menu
 
-### 5. **Quản lý History** 📜
+### 6. 📜 History — Quản lý nội dung đã tạo
 
 **Workflow:** `history`
 
-- Xem 10 lần tạo nội dung gần nhất
-- Hiển thị: tên sản phẩm, loại workflow, thời gian tạo
-- Tùy chọn: Copy vào clipboard, Export ra file .txt, Xóa entry, Tạo lại với sản phẩm này
-- Lưu trữ: scripts, descriptions, timestamps, thông tin sản phẩm
+- Xem 10 entry gần nhất (tối đa 100)
+- Xem chi tiết + post-actions: Copy / Export / Xóa / Tạo lại / Quay lại
 
-### 6. **Quản lý sản phẩm** 📦
+### 7. 📦 Products — Quản lý sản phẩm
 
 **Workflow:** `products`
 
-- Xem tất cả sản phẩm đã lưu với thống kê số lần dùng
-- Hiển thị: Tên, giá, rating, số lượt bán, mô tả, số lần sử dụng
-- Xóa sản phẩm không còn dùng
-- Sản phẩm được tự động lưu trong quá trình tạo nội dung
+- Xem sản phẩm đã lưu + số lần dùng
+- Xóa sản phẩm
+- Sắp xếp theo usage count (giảm dần)
 
-### 7. **Kiểm tra trạng thái AI** 🔄
+### 8. ⚙️ System Check — Kiểm tra AI providers
 
 **Workflow:** `check`
 
-- Test kết nối đến Ollama (AI local)
-- Test kết nối đến Google Gemini (AI cloud)
-- Hiển thị model đang cấu hình
-- Hiển thị trạng thái kết nối (✅ đã kết nối / ❌ không kết nối)
+- Test kết nối Ollama + Gemini
+- Hiển thị model đang cấu hình từ `.env`
+- Fallback tự động: Ollama → Gemini
 
 ---
 
-## 🧩 Chi tiết 3 AI Agents
+## 🧩 4 AI Agents
 
-### 1. **AutonomousTrendScanner** (`trend-scanner.ts`)
+### 1. AutonomousTrendScanner (`agents/trend-scanner.ts`)
 
-**Mục đích:** Tự động nghiên cứu trend và tạo content hoàn chỉnh
+**Vai trò:** Research trend web → tìm sản phẩm HOT theo niche.
 
-**Các chức năng chính:**
+**Methods:**
 
-#### `scanAndGenerate()` - Điểm vào chính để quét trend
+- `scanAndGenerate(niche?)` → `{ brief: TrendBrief; product: ProductInfo }`
+- `researchTrend(source, niche)` → Gọi AI research web
+- `parseResponse(text, source, nicheId)` → Parse JSON → TrendBrief
+- `displayBrief(brief)` → Hiển thị console
 
-- Chọn nguồn (TikTok/YouTube/Shopee) và niche
-- Gọi AI để nghiên cứu trend từ web
-- Tạo Trend Brief
-- Tạo video script thông qua VideoCreatorAgent
-- Tạo description thông qua MarketingWriterAgent
-- Lưu toàn bộ nội dung vào history
-
-#### `researchTrend()` - Nghiên cứu trend bằng AI
-
-- Dùng khả năng search web của AI để tìm sản phẩm trending
-- Phân tích data thị trường thực (giá, rating, số bán, lượt xem, tăng trưởng)
-- Trả về đối tượng TrendBrief có cấu trúc
-
-#### `parseResponse()` - Parse phản hồi từ AI
-
-- Trích xuất JSON từ output của AI
-- Xử lý cleanup markdown/code block
-- Fallback sang parsing text thô nếu JSON bị lỗi
-
-#### `displayBrief()` - Hiển thị trend brief dạng gọn
-
-- Tên sản phẩm, lượt xem, % trend, giá
-- Hook, angle, pain point
-- Hashtags và CTA angle
-
-**Quy trình hoạt động:**
+**Flow:**
 
 ```
-Nguồn + Niche → AI Nghiên cứu Web → Trend Brief → Product → Script + Description → History
+Nguồn + Niche → AI Research Web → TrendBrief → Product → Lưu → User chọn tiếp
 ```
 
-**Đầu vào:**
+### 2. VideoCreatorAgent (`agents/video-creator.ts`)
 
-- Nguồn scan (TikTok/YouTube/Shopee)
-- Niche (ngách sản phẩm) - có thể chọn hoặc để AI chọn ngẫu nhiên
+**Vai trò:** Tạo kịch bản video bán hàng 30-60 giây.
 
-**Đầu ra:**
+**Methods:**
 
-- Trend Brief hoàn chỉnh với thông tin sản phẩm thực tế
-- Video script tối ưu cho nền tảng
-- Post description với hashtags
-- Toàn bộ được lưu vào history
+- `generateScript(product, platform)` → `VideoScript`
+- `parseResponse(text, platform, productName)` → Parse → Hook/Body/CTA
 
----
+**Cấu trúc output:**
 
-### 2. **VideoCreatorAgent** (`video-creator.ts`)
-
-**Mục đích:** Tạo kịch bản video bán hàng hấp dẫn cho TikTok/YouTube Shorts
-
-**Các chức năng chính:**
-
-#### `generateScript()` - Tạo kịch bản video
-
-- Nhận thông tin sản phẩm và nền tảng
-- Gọi AI với prompt chuyên biệt
-- Trả về đối tượng VideoScript có cấu trúc
-
-#### `parseResponse()` - Parse phản hồi thành format script
-
-- Tính số từ và thời lượng ước tính
-- Trích xuất hook (câu đầu tiên)
-- Tìm câu CTA (câu cuối có từ khóa hành động)
-- Cấu trúc thành Hook / Body / VoiceoverCTA
-
-**Cấu trúc kịch bản:**
-
-- **Hook** (3-5 giây): Mở đầu gây chú ý ngay lập tức
-- **Body** (30-45 giây): Giới thiệu lợi ích sản phẩm + social proof (đã bán, đánh giá)
-- **CTA** (5 giây): Kêu gọi hành động (mua ngay, nhấn giỏ hàng, v.v.)
-
-**Tối ưu hóa:**
-
-- Theo nền tảng (TikTok vs YouTube Shorts)
-- 80-120 từ (thời gian đọc 45-60 giây)
-- Tiếng Việt, giọng điệu thân thiện như nói chuyện
-- Dùng trigger cảm xúc và urgency
-
-**Prompt đặc trưng:**
-
-- Mở đầu PHẢI gây chú ý trong 3 giây đầu (câu hỏi, shock, bất ngờ)
-- Nêu LỢI ÍCH cho người dùng, không chỉ liệt kê tính năng
-- Dùng từ ngữ gợi cảm xúc: "siêu", "đỉnh", "không thể bỏ lỡ"
-- Tạo cảm giác khan hiếm: "số lượng có hạn", "giá tốt nhất hôm nay"
-- Kết thúc bằng CTA rõ ràng
-
-**Quy trình hoạt động:**
-
-```
-Product + Platform → AI tạo kịch bản → Parse & Cấu trúc → VideoScript
+```typescript
+{
+  platform: "tiktok" | "youtube",
+  title: string,
+  hook: string,        // 3-5 giây
+  body: string,        // 30-45 giây
+  voiceoverCTA: string,// 5 giây
+  wordCount: number,
+  estimatedDuration: string
+}
 ```
 
-**Đầu vào:**
+### 3. MarketingWriterAgent (`agents/marketing-writer.ts`)
 
-- Thông tin sản phẩm (tên, giá, rating, đã bán, mô tả)
-- Nền tảng mục tiêu (TikTok hoặc YouTube Shorts)
+**Vai trò:** Tạo caption bài đăng tối ưu cho social media.
 
-**Đầu ra:**
+**Methods:**
 
-- VideoScript với hook, body, CTA đã được cấu trúc
-- Số từ và thời lượng ước tính
+- `generateDescription(product, scriptSummary, platform)` → `PostDescription`
+- `parseResponse(text, platform)` → Parse → Caption + Hashtags + CTA
 
----
+**Cấu trúc output:**
 
-### 3. **MarketingWriterAgent** (`marketing-writer.ts`)
-
-**Mục đích:** Tạo mô tả/caption bài đăng tối ưu cho social media
-
-**Các chức năng chính:**
-
-#### `generateDescription()` - Tạo caption bài đăng
-
-- Nhận tên sản phẩm và tóm tắt script
-- Gọi AI với prompt tập trung vào marketing
-- Trả về đối tượng PostDescription có cấu trúc
-
-#### `parseResponse()` - Parse phản hồi thành format caption
-
-- Trích xuất hashtags bằng regex
-- Tìm câu CTA (có từ khóa hành động)
-- Loại bỏ hashtags khỏi text caption
-- Tính số từ
-
-**Cấu trúc caption:**
-
-- **Dòng hook**: Mở đầu gây chú ý (câu hỏi hoặc statement shock)
-- **Body**: Giới thiệu sản phẩm + lợi ích nổi bật + social proof (đã bán, review)
-- **Urgency**: Ưu đãi có thời hạn, kích thích khan hiếm
-- **CTA + Hashtags**: Hành động rõ ràng + 5-7 hashtags tối ưu
-
-**Tối ưu hóa:**
-
-- 150-250 từ tổng cộng
-- Tối ưu cho nền tảng (TikTok/YouTube)
-- Bao gồm hashtags trending Việt Nam (#fyp, #xuhuong)
-- Tránh lặp lại nguyên văn nội dung script video
-
-**Prompt đặc trưng:**
-
-- Viết tiếng Việt tự nhiên, thân thiện như tâm sự với bạn bè
-- Dòng đầu: Hook gây chú ý
-- Đoạn giữa: Sản phẩm + lợi ích + social proof
-- Tạo urgency: "giá tốt", "có hạn", "nhanh tay"
-- Dòng cuối: CTA rõ ràng + hashtags
-
-**Quy trình hoạt động:**
-
-```
-Product + Script Summary → AI tạo caption → Parse & Trích xuất → PostDescription
+```typescript
+{
+  platform: "tiktok" | "youtube",
+  caption: string,
+  hashtags: string[],
+  cta: string,
+  wordCount: number
+}
 ```
 
-**Đầu vào:**
+### 4. ImageCreatorAgent (`agents/image-creator.ts`)
 
-- Tên sản phẩm
-- Tóm tắt nội dung video (tối đa 200 ký tự)
-- Nền tảng mục tiêu
+**Vai trò:** Tạo creative brief + image prompts cho AI Image Generator.
 
-**Đầu ra:**
+**Methods:**
 
-- PostDescription với caption, hashtags, CTA
-- Số từ của caption
+- `generateBrief(input: ImagePromptInput)` → `ImagePromptOutput`
+- `displayBrief(brief)` → Hiển thị console đẹp
 
----
+**Input:**
 
-## 🔄 Các Service hỗ trợ
+```typescript
+{
+  name: string,
+  category: string,
+  adPlatform: "facebook" | "tiktok" | "shopee" | "lazada",
+  aspectRatio: "1:1" | "9:16" | "16:9",
+  mainMessage: string,
+  price?: string
+}
+```
 
-### AI Orchestrator (`ai-orchestrator.ts`)
+**Output:**
 
-**Chức năng:**
+```typescript
+{
+  adFormat: string,
+  visualStyle: string,
+  colorPalette: string[],
+  prompts: { safe: string; bold: string; lifestyle: string },
+  negativePrompt: string,
+  shootingNotes: string
+}
+```
 
-- Quản lý chọn AI provider (Ollama → Gemini fallback)
-- Hiển thị đúng tên model từ cấu hình `.env` (đã fix bug)
-- Test kết nối provider
-- Điều phối mọi gọi AI qua interface thống nhất
-
-**Cơ chế fallback:**
-
-1. Thử Ollama trước (AI local)
-2. Nếu Ollama lỗi → Chuyển sang Gemini
-3. Nếu Gemini cũng lỗi → Báo lỗi
-
----
-
-### Ollama Client (`ollama-client.ts`)
-
-**Chức năng:**
-
-- Kết nối đến Ollama AI instance local
-- Dùng model từ biến môi trường `OLLAMA_MODEL`
-- Model mặc định: `llama3.2`
-- Có thể kiểm tra kết nối bằng `ollama.list()`
+**Nguyên tắc:** Mỗi agent chỉ **1 trách nhiệm duy nhất**, không gọi agent khác.
 
 ---
 
-### Gemini Client (`gemini-client.ts`)
+## 🔄 Services
 
-**Chức năng:**
+### AI Orchestrator (`services/ai-orchestrator.ts`)
 
-- Kết nối đến Google Gemini API (cloud)
-- Dùng model từ biến môi trường `GEMINI_MODEL`
-- Model mặc định: `gemini-2.0-flash`
-- Yêu cầu `GEMINI_API_KEY` trong `.env`
-- Có thể kiểm tra kết nối bằng `ai.models.list()`
+- `callAI(systemPrompt, userPrompt)` → Thử Ollama trước → Fallback Gemini
+- `checkProvidersStatus()` → Test + hiển thị trạng thái cả 2 providers
+- Hiển thị đúng model name từ `.env`
 
----
+### Ollama Client (`services/ollama-client.ts`)
 
-### TTS Service (`tts-service.ts`)
+- `callOllama(systemPrompt, userPrompt, model?)` → Gọi local AI
+- `checkOllamaConnection()` → Test connectivity
+- Model từ `OLLAMA_MODEL` env (default: `llama3.2`)
 
-**Chức năng:**
+### Gemini Client (`services/gemini-client.ts`)
 
-- Chuyển text thành giọng nói bằng gTTS (Google Text-to-Speech)
-- Nhiều giọng đọc tiếng Việt khác nhau
-- Tạo file audio và tính thời lượng
-- Lưu file vào `/output/audio/`
+- `callGemini(systemPrompt, userPrompt, model?)` → Gọi cloud AI
+- `checkGeminiConnection()` → Test connectivity
+- Model từ `GEMINI_MODEL` env (default: `gemini-2.0-flash`)
+- Yêu cầu `GEMINI_API_KEY`
 
----
+### TTS Service (`services/tts-service.ts`)
 
-### Trends API (`trends-api.ts`)
+- 2 giọng: `macos-linh` (macOS only) và `gtts-vi` (Google TTS)
+- `generateScriptAudio(hook, body, cta, voice)` → File MP3
+- Tự động tính thời lượng
 
-**Chức năng:**
+### Trends API (`services/trends-api.ts`)
 
-- Cung cấp nhãn nguồn scan (TikTok/YouTube/Shopee)
-- Chọn nguồn ngẫu nhiên cho trend scanning
+- `getSourceLabel(source)` → Nhãn đọc được
+- `getRandomSource()` → Random: tiktok/youtube/shopee
 
----
+### Supabase Client (`services/supabase-client.ts`)
 
-### Data Storage (`data/storage.ts`)
-
-**Chức năng:**
-
-- Lưu trữ local bằng JSON
-- Products: `/data/products.json`
-- History: `/data/history.json`
-- Export ra file text trong `/exports/`
-- Quản lý: thêm, sửa, xóa, lấy danh sách
+- Tạo Supabase client từ env vars
+- `isSupabaseConfigured()` → Check credentials
 
 ---
 
-## 🎨 Hệ thống Niches (`config/niches.ts`)
+## 📊 Data Layer (`data/storage.ts`)
 
-10+ niche sản phẩm được định nghĩa sẵn, mỗi niche có:
+**Dual-mode:** Supabase (primary) → JSON (fallback)
 
-- **Keywords:** Từ khóa để search
-- **Hashtags:** Hashtags liên quan
-- **Pain Points:** Nỗi đau/insight khách hàng
-- **Content Angles:** Góc độ content để marketing
-
-**Ví dụ:**
-
-- Đồ gia dụng nhà bếp
-- Mỹ phẩm & làm đẹp
-- Đồ công nghệ
-- Thời trang & phụ kiện
-- Chăm sóc nhà cửa
-- Sức khỏe & fitness
-- Và nhiều hơn nữa...
+| Function               | Mode Supabase              | Mode JSON            |
+| ---------------------- | -------------------------- | -------------------- |
+| `saveProduct()`        | Upsert by name             | Append products.json |
+| `getProducts()`        | Query ORDER BY usage_count | Read + sort JSON     |
+| `deleteProduct()`      | Delete by id               | Filter + rewrite     |
+| `saveToHistory()`      | INSERT, cap 100            | Unshift, cap 100     |
+| `getHistory()`         | Query DESC, limit 100      | Read JSON            |
+| `deleteHistoryEntry()` | Delete by id               | Filter + rewrite     |
+| `exportToTextFile()`   | Filesystem only            | Filesystem only      |
 
 ---
 
-## 📊 Validation nội dung
+## 🎨 12 Niches
 
-- Tự động validate chất lượng output từ AI
-- Cơ chế retry (tối đa 3 lần) nếu output không đạt chuẩn
-- Graceful degradation: vẫn hiển thị output dù chưa hoàn hảo sau khi retry hết
+`config/niches.ts` — Mỗi niche có: id, name, keywords[], hashtags[], painPoints[], contentAngles[]
+
+1. `gia-dung` — Gia dụng thông minh
+2. `thoi-trang-nu` — Thời trang nữ
+3. `thoi-trang-nam` — Thời trang nam
+4. `cong-nghe` — Công nghệ & Phụ kiện
+5. `my-pham` — Mỹ phẩm & Skincare
+6. `suc-khoe` — Sức khỏe & TPCN
+7. `me-va-be` — Mẹ & Bé
+8. `nha-cua` — Nhà cửa & Decor
+9. `the-thao` — Thể thao & Outdoor
+10. `thu-cung` — Thú cưng
+11. `oto-xe-may` — Ô tô & Xe máy
+12. `do-an` — Đồ ăn & Snack
+
+---
+
+## 📝 AI Prompts
+
+### Video Creator (`prompts/video-creator.ts`)
+
+- **`VIDEO_CREATOR_SYSTEM_PROMPT`**: AI là copywriter performance marketing 5 năm kinh nghiệm. Output JSON: hook, body, cta, wordCount, angle, script. 80-120 từ, giọng thân thiện.
+- **`buildVideoCreatorUserPrompt(product, platform)`**: Product info + smart truncation (350 chars đầu + 100 chars cuối).
+
+### Marketing Writer (`prompts/marketing-writer.ts`)
+
+- **`MARKETING_WRITER_SYSTEM_PROMPT`**: AI là TikTok marketing expert. 150-250 từ, cấu trúc: hook → benefits → social proof → urgency → CTA + hashtags.
+- **`buildMarketingWriterUserPrompt(productName, scriptSummary)`**: Context từ script.
+
+### Trend Researcher (`prompts/trend-researcher.ts`)
+
+- **`TREND_RESEARCHER_SYSTEM_PROMPT`**: AI là chuyên gia nghiên cứu xu hướng VN. Dùng web search tìm data THỰC TẾ. Output JSON: productName, price, rating, sold, views, trendPercent, description, angle, hook, hashtags, painPoint, ctaAngle.
+- **`buildTrendResearcherUserPrompt(sourceLabel, niche)`**: Source + niche info.
+
+### Image Creator (`prompts/image-creator.ts`)
+
+- **`IMAGE_PROMPT_SYSTEM`**: AI là Art Director cho ads. Visual guidelines theo ngành (beauty, food, tech, fashion, home, sports). Quy tắc ads: product 60-70% frame, text-safe zone 15-20%. Output JSON: adFormat, visualStyle, colorPalette, prompts (safe/bold/lifestyle), negativePrompt, shootingNotes.
+- **`ImagePromptInput`**: Input interface
+- **`ImagePromptOutput`**: Output interface
+- **`buildImagePromptUserPrompt(input)`**: Product + platform context mapping.
+
+---
+
+## ✅ Validation
+
+### Video Script
+
+- Word count: 80-150 từ
+- Hook: tối thiểu 10 ký tự
+- Body: tối thiểu 50 ký tự
+- Voiceover CTA: tối thiểu 5 ký tự
+
+### Post Description
+
+- Word count: 100-300 từ
+- Hashtags: tối thiểu 3
+- CTA: tối thiểu 5 ký tự
+
+**Cơ chế:** Auto-validate → Retry tối đa 2 lần → Vẫn hiển thị kèm cảnh báo nếu hết retry.
+
+---
+
+## 📁 Luồng dữ liệu tổng quát
+
+```
+User Input → Chọn Agent → AI Orchestrator → Ollama/Gemini
+                  ↓
+           Parse Response
+                  ↓
+        Validation & Retry
+                  ↓
+   Formatting + Display + Save History
+                  ↓
+  Post-Actions: Copy / Export / Edit / Regenerate
+```
+
+---
+
+## 🔐 Fallback Mechanisms
+
+**AI Providers:**
+
+```
+1. Thử Ollama (check connection)
+2. Nếu lỗi → Gemini (check API key)
+3. Nếu lỗi → Báo lỗi
+```
+
+**Storage:**
+
+```
+1. Thử Supabase (nếu đã cấu hình)
+2. Nếu lỗi → JSON files
+3. Vẫn hoạt động bình thường
+```
 
 ---
 
 ## 🛠️ Tính năng nổi bật
 
-### Chỉnh sửa & Tạo lại
-
-- Chỉnh sửa script/description trong text editor
-- Tạo lại content với cùng sản phẩm
-- Thử lại với AI model khác nếu cần
-
-### Tùy chọn Export
-
-- Copy vào clipboard
-- Export ra file `.txt` có timestamp
-- File lưu trong `/exports/`
-
-### Tái sử dụng sản phẩm
-
-- Sản phẩm được lưu tự động
-- Theo dõi số lần sử dụng
-- Chọn nhanh từ sản phẩm đã lưu
-
-### Tối ưu theo nền tảng
-
-- **TikTok:** Nhịp nhanh, tập trung trend, hook viral
-- **YouTube Shorts:** Mô tả chi tiết hơn một chút
+- ✏️ **Chỉnh sửa:** Edit hook/body/CTA/caption trong text editor
+- 💾 **Export:** Copy clipboard 1 click hoặc export file `.txt`
+- 🔄 **Tái sử dụng:** Products lưu tự động, theo dõi usage count
+- 📋 **UI/UX:** Menu phân nhóm, header chi tiết per feature, empty state hints
+- 🎨 **Color output:** Chalk colors cho console đẹp
+- 📊 **History cap:** Tối đa 100 entries
 
 ---
 
-## 🔐 Cấu hình (`.env`)
-
-```bash
-# AI Providers
-OLLAMA_MODEL=llama3.2
-OLLAMA_BASE_URL=http://localhost:11434
-GEMINI_API_KEY=your_api_key
-GEMINI_MODEL=gemini-2.0-flash
-AI_PROVIDER=ollama
-
-# Database (tùy chọn)
-SUPABASE_URL=your_url
-SUPABASE_ANON_KEY=your_key
-```
-
----
-
-## 📁 Luồng dữ liệu
-
-```
-Input người dùng → Chọn Agent → AI Orchestrator → Ollama/Gemini
-                        ↓
-                 Parse phản hồi
-                        ↓
-          Validation & Retry
-                        ↓
-     Hiển thị + Lưu vào History
-                        ↓
-   Export/Copy/Chỉnh sửa/Tạo lại
-```
-
----
-
-## 🎯 Các trường hợp sử dụng
-
-1. **Content nhanh:** Nhập sản phẩm → Có script trong 30 giây
-2. **Nghiên cứu trend:** Auto-scan sản phẩm trending → Tạo campaign hoàn chỉnh
-3. **Sản xuất hàng loạt:** Tạo nhiều script cho nhiều nền tảng khác nhau
-4. **Content giọng nói:** Chuyển script thành audio cho voiceover TikTok
-5. **Quản lý campaign:** Theo dõi history, tái sử dụng sản phẩm效果好 nhất
-
----
-
-_Cập nhật lần cuối: 2026-04-07_
+_Cập nhật lần cuối: 2026-04-08_
