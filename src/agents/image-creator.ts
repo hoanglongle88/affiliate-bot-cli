@@ -25,14 +25,19 @@ export { ImagePromptOutput as ImageBrief };
 
 export class ImageCreatorAgent {
   async generateBrief(input: ImagePromptInput): Promise<ImagePromptOutput> {
-    console.log(
-      chalk.yellow(
-        `🎨 Đang tạo creative brief cho ${input.adPlatform.toUpperCase()}...\n`,
-      ),
-    );
+    const startTime = Date.now();
+    const loadingInterval = setInterval(() => {
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      process.stdout.write(
+        chalk.gray(`\r   ⏳ Đang tạo brief ảnh... ${elapsed}s`),
+      );
+    }, 500);
 
     const userPrompt = buildImagePromptUserPrompt(input);
     const response = await callAI(IMAGE_PROMPT_SYSTEM, userPrompt);
+
+    clearInterval(loadingInterval);
+    process.stdout.write("\r" + " ".repeat(50) + "\r");
 
     return this.parseResponse(response);
   }

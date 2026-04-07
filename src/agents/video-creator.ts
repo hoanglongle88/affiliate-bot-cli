@@ -13,11 +13,17 @@ export class VideoCreatorAgent {
   ): Promise<VideoScript> {
     const userPrompt = buildVideoCreatorUserPrompt(product, platform);
 
-    console.log(
-      `🎬 Video Creator đang tạo kịch bản ${platform.toUpperCase()}...`,
-    );
+    const startTime = Date.now();
+    const loadingInterval = setInterval(() => {
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      process.stdout.write(
+        chalk.gray(`\r   ⏳ Đang tạo kịch bản... ${elapsed}s`),
+      );
+    }, 500);
 
     const response = await callAI(VIDEO_CREATOR_SYSTEM_PROMPT, userPrompt);
+    clearInterval(loadingInterval);
+    process.stdout.write("\r" + " ".repeat(50) + "\r");
 
     return this.parseResponse(response, platform, product.name);
   }

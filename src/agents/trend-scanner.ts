@@ -70,7 +70,18 @@ export class AutonomousTrendScanner {
       contentAngles: niche.contentAngles,
     });
 
+    const startTime = Date.now();
+    const loadingInterval = setInterval(() => {
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      process.stdout.write(
+        chalk.gray(`\r   ⏳ Đang research trend... ${elapsed}s`),
+      );
+    }, 500);
+
     const response = await callAI(TREND_RESEARCHER_SYSTEM_PROMPT, userPrompt);
+
+    clearInterval(loadingInterval);
+    process.stdout.write("\r" + " ".repeat(50) + "\r");
 
     return this.parseResponse(response, source, niche.id);
   }

@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { ProductInfo, PostDescription, Platform } from "../types/content";
 import { callAI } from "../services/ai-orchestrator";
 import {
@@ -13,14 +14,20 @@ export class MarketingWriterAgent {
   ): Promise<PostDescription> {
     const userPrompt = buildMarketingWriterUserPrompt(
       product.name,
+      product.description.substring(0, 200),
+      "Người mua hàng online tại Việt Nam",
       scriptSummary,
     );
 
-    console.log(
-      `✍️  Marketing Writer đang tạo mô tả ${platform.toUpperCase()}...`,
-    );
+    const startTime = Date.now();
+    const loadingInterval = setInterval(() => {
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      process.stdout.write(chalk.gray(`\r   ⏳ Đang tạo mô tả... ${elapsed}s`));
+    }, 500);
 
     const response = await callAI(MARKETING_WRITER_SYSTEM_PROMPT, userPrompt);
+    clearInterval(loadingInterval);
+    process.stdout.write("\r" + " ".repeat(50) + "\r");
 
     return this.parseResponse(response, platform);
   }

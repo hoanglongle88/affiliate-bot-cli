@@ -177,11 +177,8 @@ async function generateWithRetry<T>(
   for (let i = 0; i < maxRetries; i++) {
     console.log(
       chalk.yellow(
-        `\n⚠️  Output chưa đạt chuẩn (${validation.issues.join(", ")})`,
+        `\n⚠️  Output chưa đạt chuẩn (${validation.issues.join(", ")}) — đang tạo lại lần ${i + 2}/${maxRetries + 1}...\n`,
       ),
-    );
-    console.log(
-      chalk.yellow(`🔄 Đang tạo lại lần ${i + 2}/${maxRetries + 1}...\n`),
     );
 
     result = await generator();
@@ -344,7 +341,10 @@ async function generateScriptFlow() {
   const content: GeneratedContent = { product, script };
   await saveToHistory(product, content, "script");
 
-  await handlePostActions("script", content);
+  const result = await handlePostActions("script", content);
+  if (result === "back") {
+    await generateScriptFlow();
+  }
 }
 
 async function generateDescriptionFlow() {
@@ -388,7 +388,10 @@ async function generateDescriptionFlow() {
   const content: GeneratedContent = { product, description };
   await saveToHistory(product, content, "description");
 
-  await handlePostActions("description", content);
+  const result = await handlePostActions("description", content);
+  if (result === "back") {
+    await generateDescriptionFlow();
+  }
 }
 
 // ── Image Brief Flow ──
@@ -533,12 +536,7 @@ async function viewHistory() {
 
   const choices = history.slice(0, 10).map((entry: HistoryEntry, i: number) => {
     const date = new Date(entry.createdAt).toLocaleString("vi-VN");
-    const type =
-      entry.workflow === "full"
-        ? "🚀 Full"
-        : entry.workflow === "script"
-          ? "🎬 Script"
-          : "✍️ Description";
+    const type = entry.workflow === "script" ? "🎬 Script" : "✍️ Description";
     return {
       name: `${i + 1}. ${type} - ${entry.product.name} (${date})`,
       value: entry.id,
@@ -955,7 +953,8 @@ async function generateTrendScanFlow() {
       const content: GeneratedContent = { product, script };
       await saveToHistory(product, content, "script");
 
-      await handlePostActions("script", content);
+      const result = await handlePostActions("script", content);
+      if (result === "back") continue;
       return;
     }
 
@@ -985,7 +984,8 @@ async function generateTrendScanFlow() {
       const content: GeneratedContent = { product, description };
       await saveToHistory(product, content, "description");
 
-      await handlePostActions("description", content);
+      const result = await handlePostActions("description", content);
+      if (result === "back") continue;
       return;
     }
   }
