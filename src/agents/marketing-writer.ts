@@ -33,11 +33,11 @@ export class MarketingWriterAgent {
   }
 
   private parseResponse(text: string, platform: Platform): PostDescription {
-    // Extract hashtags
+    // Extract hashtags (cuối text)
     const hashtagRegex = /#[\wÀ-ỹ]+/g;
     const hashtags = text.match(hashtagRegex) || [];
 
-    // CTA = last sentence with action words
+    // CTA = câu cuối có action keywords
     const sentences = text.split(/[.!?\n]/).filter((s) => s.trim().length > 0);
     const ctaKeywords = [
       "mua",
@@ -55,14 +55,20 @@ export class MarketingWriterAgent {
         .find((s) => ctaKeywords.some((kw) => s.toLowerCase().includes(kw)))
         ?.trim() || "";
 
-    // Caption = full text minus hashtags
-    const caption = text.replace(hashtagRegex, "").replace(/\s+/g, " ").trim();
+    // Caption = text gốc giữ nguyên emoji, chỉ remove hashtags
+    const caption = text.replace(hashtagRegex, "").trim();
+
+    // Default hashtags nếu không có
+    const defaultTags = ["#fyp", "#xuhuong", "#review"];
+    const finalTags =
+      hashtags.length >= 3
+        ? hashtags.slice(0, 7)
+        : [...new Set([...hashtags, ...defaultTags])].slice(0, 7);
 
     return {
       platform,
       caption,
-      hashtags:
-        hashtags.length > 0 ? hashtags : ["#fyp", "#xuhuong", "#review"],
+      hashtags: finalTags,
       cta,
       wordCount: text.split(/\s+/).length,
     };

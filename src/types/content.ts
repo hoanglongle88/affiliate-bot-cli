@@ -6,6 +6,7 @@ export interface ProductInfo {
   price: string;
   rating: string;
   sold: string;
+  usp?: string; // Unique Selling Point - Điểm bán hàng độc nhất
 }
 
 export interface VideoScript {

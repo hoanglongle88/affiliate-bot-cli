@@ -33,7 +33,6 @@ export class VideoCreatorAgent {
     platform: Platform,
     productName: string,
   ): VideoScript {
-    // Step 1: Try to parse JSON response
     let cleaned = text
       .replace(/```json\s*/g, "")
       .replace(/```\s*/g, "")
@@ -45,15 +44,24 @@ export class VideoCreatorAgent {
     try {
       const data = JSON.parse(cleaned);
 
-      // AI returns: { hook, body, cta, wordCount, angle, script }
-      // "script" = hook + body + cta merged into readable paragraph
+      // AI returns: { angle, target_persona, hook, body, cta, visual_suggestion, script }
       const mergedScript =
         data.script || `${data.hook} ${data.body} ${data.cta}`;
       const wordCount = data.wordCount || mergedScript.split(/\s+/).length;
 
+      // Title dựa trên angle để hấp dẫn hơn
+      const titleAngle =
+        data.angle === "pain-point"
+          ? "Đừng mua nếu chưa biết"
+          : data.angle === "price-shock"
+            ? "Giá không tưởng"
+            : data.angle === "social-proof"
+              ? "Cháy hàng loạt"
+              : "Không thể bỏ qua";
+
       return {
         platform,
-        title: `Review ${productName}`,
+        title: `${titleAngle}: ${productName}`,
         hook: data.hook || "",
         body: mergedScript,
         voiceoverCTA: data.cta || "",
@@ -61,7 +69,6 @@ export class VideoCreatorAgent {
         estimatedDuration: `${Math.round(wordCount / 2.5)} giây`,
       };
     } catch {
-      // Step 2: Fallback — raw text parsing (old behavior)
       console.log(
         chalk.yellow("⚠️  Không parse được JSON, dùng fallback parsing\n"),
       );
