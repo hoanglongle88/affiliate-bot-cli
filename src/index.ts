@@ -805,10 +805,8 @@ async function generateTTSFromScript() {
   // Generate TTS
   console.log(chalk.yellow("\n🎤 Đang tạo giọng nói AI...\n"));
 
-  const { audioPath, duration } = await tts.generateScriptAudio(
-    scriptContent.hook,
-    scriptContent.body,
-    scriptContent.voiceoverCTA,
+  const { audioPath, duration } = await tts.textToSpeech(
+    scriptContent.body, // body = full merged script (hook + body + cta)
     voice as VoiceType,
   );
 

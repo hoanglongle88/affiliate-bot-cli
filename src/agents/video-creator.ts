@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { ProductInfo, VideoScript, Platform } from "../types/content";
 import { callAI } from "../services/ai-orchestrator";
 import {
@@ -26,36 +27,71 @@ export class VideoCreatorAgent {
     platform: Platform,
     productName: string,
   ): VideoScript {
-    const wordCount = text.split(/\s+/).length;
-    const estimatedDuration = `${Math.round(wordCount / 2.5)} giây`;
+    // Step 1: Try to parse JSON response
+    let cleaned = text
+      .replace(/```json\s*/g, "")
+      .replace(/```\s*/g, "")
+      .trim();
 
-    const sentences = text.split(/[.!?\n]/).filter((s) => s.trim().length > 0);
-    const hook = sentences[0]?.trim() || "";
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) cleaned = jsonMatch[0];
 
-    // Extract CTA if present (last sentence with action words)
-    const ctaKeywords = [
-      "mua",
-      "giỏ hàng",
-      "link",
-      "nhấn",
-      "click",
-      "đặt hàng",
-      "inbox",
-    ];
-    const ctaSentence =
-      [...sentences]
-        .reverse()
-        .find((s) => ctaKeywords.some((kw) => s.toLowerCase().includes(kw))) ||
-      "Nhấn vào giỏ hàng bên trái để mua ngay!";
+    try {
+      const data = JSON.parse(cleaned);
 
-    return {
-      platform,
-      title: `Review ${productName}`,
-      hook,
-      body: text,
-      voiceoverCTA: ctaSentence.trim(),
-      wordCount,
-      estimatedDuration,
-    };
+      // AI returns: { hook, body, cta, wordCount, angle, script }
+      // "script" = hook + body + cta merged into readable paragraph
+      const mergedScript =
+        data.script || `${data.hook} ${data.body} ${data.cta}`;
+      const wordCount = data.wordCount || mergedScript.split(/\s+/).length;
+
+      return {
+        platform,
+        title: `Review ${productName}`,
+        hook: data.hook || "",
+        body: mergedScript,
+        voiceoverCTA: data.cta || "",
+        wordCount,
+        estimatedDuration: `${Math.round(wordCount / 2.5)} giây`,
+      };
+    } catch {
+      // Step 2: Fallback — raw text parsing (old behavior)
+      console.log(
+        chalk.yellow("⚠️  Không parse được JSON, dùng fallback parsing\n"),
+      );
+
+      const sentences = text
+        .split(/[.!?\n]/)
+        .filter((s) => s.trim().length > 0);
+      const hook = sentences[0]?.trim() || "";
+
+      const ctaKeywords = [
+        "mua",
+        "giỏ hàng",
+        "link",
+        "nhấn",
+        "click",
+        "đặt hàng",
+        "inbox",
+      ];
+      const ctaSentence =
+        [...sentences]
+          .reverse()
+          .find((s) =>
+            ctaKeywords.some((kw) => s.toLowerCase().includes(kw)),
+          ) || "Nhấn vào giỏ hàng bên trái để mua ngay!";
+
+      const wordCount = text.split(/\s+/).length;
+
+      return {
+        platform,
+        title: `Review ${productName}`,
+        hook,
+        body: text,
+        voiceoverCTA: ctaSentence.trim(),
+        wordCount,
+        estimatedDuration: `${Math.round(wordCount / 2.5)} giây`,
+      };
+    }
   }
 }
