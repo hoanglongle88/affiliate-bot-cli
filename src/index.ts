@@ -13,6 +13,7 @@ import {
 import { VideoCreatorAgent } from "./agents/video-creator";
 import { MarketingWriterAgent } from "./agents/marketing-writer";
 import { AutonomousTrendScanner } from "./agents/trend-scanner";
+import { ImageCreatorAgent } from "./agents/image-creator";
 import {
   formatScriptOutput,
   formatDescriptionOutput,
@@ -384,6 +385,121 @@ async function generateDescriptionFlow() {
   await saveToHistory(product, content, "description");
 
   await handlePostActions("description", content);
+}
+
+// ── Image Brief Flow ──
+
+async function generateImageBriefFlow() {
+  console.log(
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    chalk.bold.cyan("║   🎨  IMAGE CREATOR - Creative brief ảnh ads      ║"),
+  );
+  console.log(
+    chalk.bold.cyan("║       Tạo prompt cho AI Image Generator            ║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
+  );
+
+  const product = await selectOrEnterProduct();
+
+  const { adPlatform } = await inquirer.prompt([
+    {
+      type: "rawlist",
+      name: "adPlatform",
+      message: "📱 Nền tảng quảng cáo:",
+      choices: [
+        { name: "📘 Facebook / Instagram", value: "facebook" },
+        { name: "🎵 TikTok", value: "tiktok" },
+        { name: "🛒 Shopee", value: "shopee" },
+        { name: "🛍️ Lazada", value: "lazada" },
+      ],
+    },
+  ]);
+
+  const { aspectRatio } = await inquirer.prompt([
+    {
+      type: "rawlist",
+      name: "aspectRatio",
+      message: "📐 Tỷ lệ ảnh:",
+      choices: [
+        { name: "1:1 — Vuông (Feed, Shopee)", value: "1:1" },
+        { name: "9:16 — Dọc (Stories, Reels, TikTok)", value: "9:16" },
+        { name: "16:9 — Ngang (YouTube, Banner)", value: "16:9" },
+      ],
+      default: "1:1",
+    },
+  ]);
+
+  const niche = ""; // Auto-detect from product name or leave generic
+  const agent = new ImageCreatorAgent();
+
+  const brief = await agent.generateBrief(
+    product.name,
+    niche || "Đa ngành hàng",
+    adPlatform,
+    aspectRatio,
+    product.description.substring(0, 200),
+    product.price,
+  );
+
+  agent.displayBrief(brief);
+
+  while (true) {
+    const { action } = await inquirer.prompt([
+      {
+        type: "rawlist",
+        name: "action",
+        message: "Làm gì tiếp theo?",
+        choices: [
+          { name: "📋  Copy prompts vào clipboard", value: "copy" },
+          { name: "💾  Xuất brief ra file txt", value: "export" },
+          { name: "🔄  Tạo lại brief khác", value: "regenerate" },
+          { name: "⏭️  Quay lại menu chính", value: "menu" },
+        ],
+      },
+    ]);
+
+    if (action === "menu") return;
+
+    if (action === "copy") {
+      const text = `IMAGE BRIEF — ${product.name}
+Format: ${brief.adFormat} | Platform: ${adPlatform} | Ratio: ${aspectRatio}
+
+🎨 Visual: ${brief.visualStyle}
+🎨 Colors: ${brief.colorPalette.join(", ")}
+
+📝 SAFE:
+${brief.prompts.safe}
+
+📝 BOLD:
+${brief.prompts.bold}
+
+📝 LIFESTYLE:
+${brief.prompts.lifestyle}
+
+🚫 Negative: ${brief.negativePrompt}
+📸 Notes: ${brief.shootingNotes}`;
+      await copyToClipboard(text, "image brief");
+      continue;
+    }
+
+    if (action === "export") {
+      const filepath = exportToTextFile(
+        { product, brief } as any,
+        `Image Brief — ${product.name}`,
+      );
+      console.log(chalk.green(`\n💾 Đã xuất file: ${filepath}\n`));
+      continue;
+    }
+
+    if (action === "regenerate") {
+      await generateImageBriefFlow();
+      return;
+    }
+  }
 }
 
 // ── History Viewer ──
@@ -883,6 +999,10 @@ async function askMainMenu(): Promise<string> {
           name: "[Marketing Writer] - Tạo caption & hashtags bài đăng",
           value: "description",
         },
+        {
+          name: "[Image Creator] - Tạo brief ảnh ads (prompt AI)",
+          value: "imagebrief",
+        },
         new inquirer.Separator(" 🎨 Tiện ích & Quản lý "),
         {
           name: "[TTS Voice] - Chuyển kịch bản thành giọng nói AI",
@@ -930,6 +1050,8 @@ async function mainLoop() {
       await generateDescriptionFlow();
     } else if (action === "trendscan") {
       await generateTrendScanFlow();
+    } else if (action === "imagebrief") {
+      await generateImageBriefFlow();
     } else if (action === "tts") {
       await generateTTSFromScript();
     } else if (action === "history") {
