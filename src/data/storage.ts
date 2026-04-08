@@ -735,13 +735,79 @@ export async function getHistory(): Promise<HistoryEntry[]> {
     return [];
   }
 
-  return data.map((h: any) => ({
-    id: h.id,
-    product: h.product_data,
-    content: h.content_data,
-    createdAt: h.created_at,
-    workflow: h.workflow,
-  }));
+  const entries: HistoryEntry[] = [];
+
+  for (const h of data) {
+    // Handle both old format (product_data embedded) and new format (product_id reference)
+    let productData = h.product_data;
+    let contentData = h.content_data;
+
+    // If no product_data, try to load from product_id reference
+    if (!productData && h.product_id) {
+      const prod = await getProductById(h.product_id);
+      if (prod) {
+        productData = {
+          name: prod.name,
+          description: prod.description,
+          price: prod.price,
+          rating: prod.rating,
+          sold: prod.sold,
+        };
+      }
+    }
+
+    // If no content_data, try to load from script_id/description_id references
+    if (!contentData) {
+      contentData = {};
+      if (h.script_id) {
+        const script = await getVideoScriptById(h.script_id);
+        if (script) {
+          contentData.script = {
+            platform: script.platform,
+            title: script.title,
+            hook: script.hook,
+            body: script.body,
+            voiceoverCTA: script.voiceoverCta,
+            wordCount: script.wordCount,
+            estimatedDuration: script.estimatedDuration,
+          };
+        }
+      }
+      if (h.description_id) {
+        const desc = await getPostDescriptionById(h.description_id);
+        if (desc) {
+          contentData.description = {
+            platform: desc.platform,
+            caption: desc.caption,
+            hashtags: desc.hashtags,
+            cta: desc.cta,
+            wordCount: desc.wordCount,
+          };
+        }
+      }
+    }
+
+    // Skip if no data could be loaded
+    if (!productData) {
+      productData = {
+        name: "Unknown",
+        description: "",
+        price: "",
+        rating: "",
+        sold: "",
+      };
+    }
+
+    entries.push({
+      id: h.id,
+      product: productData,
+      content: contentData,
+      createdAt: h.created_at,
+      workflow: h.workflow,
+    });
+  }
+
+  return entries;
 }
 
 export async function getHistoryWithRefs(
