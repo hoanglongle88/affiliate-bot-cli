@@ -62,6 +62,32 @@ import { getUsage, resetUsage } from "./services/usage-tracker";
 import { NICHES, getNicheById, getRandomNiche } from "./config/niches";
 import fs from "fs";
 
+// ── Shared Back Helper ──
+
+/**
+ * Ask user to go back to main menu or exit
+ * Returns true if user chose to exit
+ */
+async function askBackOrMenu(): Promise<boolean> {
+  const { action } = await inquirer.prompt([
+    {
+      type: "rawlist",
+      name: "action",
+      message: "Làm gì tiếp theo?",
+      choices: [
+        { name: "⏮️  Quay lại menu chính", value: "menu" },
+        { name: "❌  Thoát", value: "exit" },
+      ],
+    },
+  ]);
+
+  if (action === "exit") {
+    console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+    return true;
+  }
+  return false;
+}
+
 // ── Product Input ──
 
 async function selectOrEnterProduct(
@@ -942,6 +968,8 @@ async function importCSVFlow() {
 
   if (!confirm) {
     console.log(chalk.yellow("\n❌ Đã hủy import.\n"));
+    const shouldExit = await askBackOrMenu();
+    if (shouldExit) process.exit(0);
     return;
   }
 
@@ -963,6 +991,9 @@ async function importCSVFlow() {
   }
   console.log(chalk.bold.cyan("═".repeat(50)));
   console.log("");
+
+  const shouldExit = await askBackOrMenu();
+  if (shouldExit) process.exit(0);
 }
 
 // ── History Viewer (Product-centric) ──
@@ -1523,25 +1554,36 @@ async function generateTTSFromScript() {
   console.log(chalk.green(`\n💾 File voice đã tạo: ${audioPath}`));
   console.log(chalk.cyan(`📊 Thời lượng: ~${Math.round(duration)} giây\n`));
 
-  // Post-actions
-  const { action } = await inquirer.prompt([
-    {
-      type: "rawlist",
-      name: "action",
-      message: "Làm gì tiếp theo?",
-      choices: [
-        { name: "▶️  Mở file voice vừa tạo", value: "open" },
-        { name: "🔄  Tạo voice từ script khác", value: "again" },
-        { name: "⏭️  Quay lại menu chính", value: "menu" },
-      ],
-    },
-  ]);
+  // Post-actions with back/exit
+  while (true) {
+    const { action } = await inquirer.prompt([
+      {
+        type: "rawlist",
+        name: "action",
+        message: "Làm gì tiếp theo?",
+        choices: [
+          { name: "▶️  Mở file voice vừa tạo", value: "open" },
+          { name: "🔄  Tạo voice từ script khác", value: "again" },
+          { name: "⏮️  Quay lại menu chính", value: "menu" },
+          { name: "❌  Thoát", value: "exit" },
+        ],
+      },
+    ]);
 
-  if (action === "open") {
-    const { exec } = require("child_process");
-    exec(`open "${audioPath}"`);
-  } else if (action === "again") {
-    await generateTTSFromScript();
+    if (action === "exit") {
+      console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+      process.exit(0);
+    }
+    if (action === "menu") return;
+    if (action === "open") {
+      const { exec } = require("child_process");
+      exec(`open "${audioPath}"`);
+      continue;
+    }
+    if (action === "again") {
+      await generateTTSFromScript();
+      return;
+    }
   }
 }
 
