@@ -119,19 +119,21 @@ export function badge(
 export function cyberHeader(): string {
   const neon = chalk.hex("#00f0ff");
   const pink = chalk.hex("#ff006e");
-  const dark = chalk.hex("#0a0a1a");
-  const dim = chalk.hex("#1a1a3a");
   const W = 60;
 
   const border = neon("┃");
   const corner = pink("┏") + neon("━".repeat(W - 2)) + pink("┓");
   const bottom = pink("┗") + neon("━".repeat(W - 2)) + pink("┛");
 
-  const title = `${pink("  ⚡")} ${neon.bold("AFFILIATE BOT")} ${pink.bold("v2.0")}`;
-  const subtitle = `${chalk.hex("#7b2ff7").italic("  AI-Powered Content Automation")}`;
+  // Use raw string lengths for padding (ANSI codes inflate .length)
+  const rawTitle = "⚡ AFFILIATE BOT v2.0";
+  const title = pink("⚡ ") + neon.bold("AFFILIATE BOT") + pink.bold(" v2.0");
+  const rawSub = "AI-Powered Content Automation";
+  const subtitle = chalk.hex("#7b2ff7").italic("AI-Powered Content Automation");
 
   const midLine1 = border + neon("━".repeat(W - 2)) + border;
-  const pad1 = Math.floor((W - 2 - title.length) / 2);
+  const pad1 = Math.max(0, Math.floor((W - 2 - rawTitle.length) / 2));
+  const pad2 = Math.max(0, Math.floor((W - 2 - rawSub.length) / 2));
 
   let out = "\n";
   out += corner + "\n";
@@ -139,17 +141,15 @@ export function cyberHeader(): string {
     border +
     " ".repeat(pad1) +
     title +
-    " ".repeat(W - 2 - pad1 - title.length) +
+    " ".repeat(Math.max(0, W - 2 - pad1 - rawTitle.length)) +
     border +
     "\n";
   out += midLine1 + "\n";
   out +=
     border +
-    " ".repeat(Math.floor((W - 2 - subtitle.length) / 2)) +
+    " ".repeat(pad2) +
     subtitle +
-    " ".repeat(
-      W - 2 - Math.floor((W - 2 - subtitle.length) / 2) - subtitle.length,
-    ) +
+    " ".repeat(Math.max(0, W - 2 - pad2 - rawSub.length)) +
     border +
     "\n";
   out += bottom + "\n";
