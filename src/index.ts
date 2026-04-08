@@ -96,6 +96,31 @@ async function selectOrEnterProduct(
   const products = await getProducts();
 
   if (products.length === 0) {
+    console.log(chalk.yellow("\n📭 Chưa có sản phẩm nào trong database.\n"));
+    const { action } = await inquirer.prompt([
+      {
+        type: "rawlist",
+        name: "action",
+        message: "Bạn muốn làm gì?",
+        choices: [
+          { name: "🆕  Nhập sản phẩm mới", value: "new" },
+          { name: "⏮️  Quay lại menu chính", value: "menu" },
+          { name: "❌  Thoát", value: "exit" },
+        ],
+      },
+    ]);
+
+    if (action === "exit") {
+      console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+      process.exit(0);
+    }
+    if (action === "menu") {
+      return {
+        product: { name: "", description: "", price: "", rating: "", sold: "" },
+        productId: null,
+      };
+    }
+
     const newProduct = await enterProduct();
     const allProducts = await getProducts();
     const found = allProducts.find((p) => p.name === newProduct.name);
@@ -118,6 +143,11 @@ async function selectOrEnterProduct(
     name: `${displayCount + 1}. 🆕 Nhập sản phẩm mới`,
     value: "new",
   });
+  choices.push({
+    name: `${displayCount + 2}. ⏮️ Quay lại menu chính`,
+    value: "menu",
+  });
+  choices.push({ name: `${displayCount + 3}. ❌  Thoát`, value: "exit" });
 
   const { action } = await inquirer.prompt([
     {
@@ -131,6 +161,18 @@ async function selectOrEnterProduct(
   if (action === "more") {
     // Show full list
     return selectOrEnterProduct(true);
+  }
+
+  if (action === "exit") {
+    console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+    process.exit(0);
+  }
+
+  if (action === "menu") {
+    return {
+      product: { name: "", description: "", price: "", rating: "", sold: "" },
+      productId: null,
+    };
   }
 
   if (action === "new") {
@@ -531,6 +573,8 @@ async function generateScriptFlow() {
   );
 
   const { product, productId } = await selectOrEnterProduct();
+  if (!product.name) return; // User chose "back to menu"
+
   const platform = await selectPlatform();
 
   const agent = new VideoCreatorAgent();
@@ -568,6 +612,7 @@ async function generateDescriptionFlow() {
   );
 
   const { product, productId } = await selectOrEnterProduct();
+  if (!product.name) return;
   const platform = await selectPlatform();
 
   // User chọn nguồn context cho caption
@@ -662,6 +707,7 @@ async function generateImageBriefFlow() {
   );
 
   const { product, productId } = await selectOrEnterProduct();
+  if (!product.name) return;
 
   const { adPlatform } = await inquirer.prompt([
     {
@@ -811,6 +857,7 @@ async function generateShortVideoFlow() {
   );
 
   const { product, productId } = await selectOrEnterProduct();
+  if (!product.name) return;
 
   // Must have existing script
   const scripts = await getVideoScriptsByProductId(productId!, 10);
@@ -1514,6 +1561,7 @@ async function generateTTSFromScript() {
     if (source === "new") {
       console.log(chalk.yellow("\n🎬 Tạo kịch bản mới trước...\n"));
       const { product, productId } = await selectOrEnterProduct();
+      if (!product.name) return;
       const plat = await selectPlatform();
 
       const agent = new VideoCreatorAgent();
@@ -1539,6 +1587,7 @@ async function generateTTSFromScript() {
   } else {
     console.log(chalk.yellow("\n📭 Chưa có kịch bản nào. Tạo mới...\n"));
     const { product, productId } = await selectOrEnterProduct();
+    if (!product.name) return;
     const plat = await selectPlatform();
 
     const agent = new VideoCreatorAgent();
