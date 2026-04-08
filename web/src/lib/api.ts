@@ -6,8 +6,17 @@ const api = axios.create({
 });
 
 // Products
-export const getProducts = () =>
-  api.get("/products").then((r) => r.data.products);
+export const getProducts = (params?: {
+  q?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const query = new URLSearchParams();
+  if (params?.q) query.set("q", params.q);
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.limit) query.set("limit", String(params.limit));
+  return api.get(`/products?${query}`).then((r) => r.data);
+};
 export const createProduct = (data: {
   name: string;
   description: string;
@@ -15,6 +24,16 @@ export const createProduct = (data: {
   rating?: string;
   sold?: string;
 }) => api.post("/products", data).then((r) => r.data);
+export const updateProduct = (
+  id: string,
+  data: {
+    name: string;
+    description: string;
+    price?: string;
+    rating?: string;
+    sold?: string;
+  },
+) => api.put(`/products/${id}`, data).then((r) => r.data);
 export const deleteProduct = (id: string) =>
   api.delete(`/products/${id}`).then((r) => r.data);
 

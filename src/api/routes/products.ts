@@ -5,16 +5,38 @@ import {
   saveProduct,
   deleteProduct,
   deleteAllProducts,
+  SavedProduct,
 } from "../../data/storage";
 import { ProductInfo } from "../../types/content";
 
 const router = Router();
 
-// GET /api/products - List all products
-router.get("/", async (_req: Request, res: Response) => {
+// GET /api/products - List products with search + pagination
+router.get("/", async (req: Request, res: Response) => {
   try {
-    const products = await getProducts();
-    res.json({ products, total: products.length });
+    const allProducts = await getProducts();
+    const q = (req.query.q as string)?.toLowerCase() || "";
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    // Search filter
+    const filtered = q
+      ? allProducts.filter(
+          (p) =>
+            p.name.toLowerCase().includes(q) ||
+            p.description.toLowerCase().includes(q) ||
+            p.price.toLowerCase().includes(q),
+        )
+      : allProducts;
+
+    // Pagination
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const currentPage = Math.min(page, totalPages);
+    const start = (currentPage - 1) * limit;
+    const products = filtered.slice(start, start + limit);
+
+    res.json({ products, total, page: currentPage, totalPages, limit });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -66,6 +88,27 @@ router.delete("/:id", async (req: Request, res: Response) => {
       return;
     }
     res.json({ message: "Product deleted" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/products/:id - Update product
+router.put("/:id", async (req: Request, res: Response) => {
+  try {
+    const { name, description, price, rating, sold } = req.body;
+    if (!name || !description) {
+      res.status(400).json({ error: "Missing name or description" });
+      return;
+    }
+    const updated = await saveProduct({
+      name,
+      description,
+      price,
+      rating,
+      sold,
+    });
+    res.json({ product: updated, message: "Product updated" });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
