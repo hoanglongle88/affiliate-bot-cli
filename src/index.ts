@@ -37,6 +37,8 @@ import {
   deleteProduct,
   deleteAllProducts,
   exportToTextFile,
+  exportImageBrief,
+  appendPostDescription,
   getVideoScripts,
   saveVideoScript,
   savePostDescription,
@@ -574,6 +576,17 @@ async function generateDescriptionFlow() {
   );
   await saveToHistoryWithRefs(productId, null, savedDesc.id, "description");
 
+  // Append to export file
+  const exportPath = appendPostDescription(product.name, {
+    headline: description.headline,
+    content: description.content,
+    offer: description.offer,
+    cta: description.cta,
+    hashtags: description.hashtags,
+    wordCount: description.wordCount,
+  });
+  console.log(chalk.gray(`📄 Đã cập nhật file export: ${exportPath}\n`));
+
   const content: GeneratedContent = { product, description };
   const result = await handlePostActions("description", content);
   if (result === "back") {
@@ -659,6 +672,16 @@ async function generateImageBriefFlow() {
   await saveImageBrief(briefToSave);
   await saveToHistoryWithRefs(productId, null, null, "image_brief");
   console.log(chalk.green("💾 Đã lưu image brief vào database!\n"));
+
+  // Auto-export to file
+  const exportPath = exportImageBrief(
+    product.name,
+    { price: product.price, rating: product.rating, sold: product.sold },
+    brief,
+    adPlatform,
+    aspectRatio,
+  );
+  console.log(chalk.gray(`📄 Đã xuất file: ${exportPath}\n`));
 
   while (true) {
     const { action } = await inquirer.prompt([
@@ -1261,6 +1284,17 @@ async function generateTrendScanFlow() {
         savedDesc.id,
         "description",
       );
+
+      // Append to export file
+      const exportPath = appendPostDescription(product.name, {
+        headline: description.headline,
+        content: description.content,
+        offer: description.offer,
+        cta: description.cta,
+        hashtags: description.hashtags,
+        wordCount: description.wordCount,
+      });
+      console.log(chalk.gray(`📄 Đã cập nhật file export: ${exportPath}\n`));
 
       const content: GeneratedContent = { product, description };
       const result = await handlePostActions("description", content);
