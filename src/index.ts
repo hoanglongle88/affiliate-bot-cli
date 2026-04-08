@@ -40,6 +40,13 @@ import {
   exportImageBrief,
   appendPostDescription,
   getVideoScripts,
+  getVideoScriptById,
+  getVideoScriptsByProductId,
+  getPostDescriptions,
+  getPostDescriptionById,
+  getPostDescriptionsByProductId,
+  getImageBriefs,
+  getImageBriefById,
   saveVideoScript,
   savePostDescription,
   saveTrendBrief,
@@ -738,7 +745,7 @@ ${brief.prompts.lifestyle}
   }
 }
 
-// ── History Viewer ──
+// ── History Viewer (Product-centric) ──
 
 async function viewHistory() {
   console.log(
@@ -748,47 +755,45 @@ async function viewHistory() {
     chalk.bold.cyan("║   📜  HISTORY - Lịch sử nội dung đã tạo           ║"),
   );
   console.log(
-    chalk.bold.cyan("║       Xem, quản lý & tái sử dụng nội dung          ║"),
+    chalk.bold.cyan("║       Xem theo sản phẩm → Chi tiết nội dung       ║"),
   );
   console.log(
     chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
   );
 
-  const history = await getHistory();
+  // Step 1: Show products with content count
+  const products = await getProducts();
 
-  if (history.length === 0) {
-    console.log(chalk.yellow("\n📭 Chưa có lịch sử nội dung nào.\n"));
-    console.log(
-      chalk.gray("💡 Mẹo: Hãy tạo nội dung trước để xem ở đây nhé!\n"),
-    );
+  if (products.length === 0) {
+    console.log(chalk.yellow("\n📭 Chưa có sản phẩm nào.\n"));
     return;
   }
 
-  const choices = history.slice(0, 10).map((entry: HistoryEntry, i: number) => {
-    const date = new Date(entry.createdAt).toLocaleString("vi-VN");
-    const type = entry.workflow === "script" ? "🎬 Script" : "✍️ Description";
+  const productChoices = products.slice(0, 15).map((p, i) => {
+    const counts: string[] = [];
+    if (p.usageCount > 0) counts.push(`${p.usageCount}x nội dung`);
     return {
-      name: `${i + 1}. ${type} - ${entry.product.name} (${date})`,
-      value: entry.id,
+      name: `${i + 1}. ${p.name} | ${p.price} | ${counts.join(", ") || "Chưa có nội dung"}`,
+      value: p.id,
     };
   });
 
-  choices.push({ name: "─".repeat(40), value: "sep" });
-  choices.push({ name: "🗑️  Xóa TOÀN BỘ lịch sử", value: "clearAll" });
-  choices.push({ name: "❌  Quay lại", value: "back" });
+  productChoices.push({ name: "─".repeat(50), value: "sep" });
+  productChoices.push({ name: "🗑️  Xóa TOÀN BỘ lịch sử", value: "clearAll" });
+  productChoices.push({ name: "❌  Quay lại", value: "back" });
 
-  const { selected } = await inquirer.prompt([
+  const { selectedProduct } = await inquirer.prompt([
     {
       type: "rawlist",
-      name: "selected",
-      message: "📜 Xem lịch sử (10 gần nhất):",
-      choices,
+      name: "selectedProduct",
+      message: "📦 Chọn sản phẩm để xem nội dung:",
+      choices: productChoices,
     },
   ]);
 
-  if (selected === "back") return;
+  if (selectedProduct === "back") return;
 
-  if (selected === "clearAll") {
+  if (selectedProduct === "clearAll") {
     const { confirm } = await inquirer.prompt([
       {
         type: "confirm",
@@ -804,73 +809,220 @@ async function viewHistory() {
     return;
   }
 
-  const entry = history.find((h: HistoryEntry) => h.id === selected);
-  if (!entry) return;
+  // Step 2: Load all content for this product
+  const product = products.find((p) => p.id === selectedProduct);
+  if (!product) return;
 
-  console.log(chalk.bold.cyan(`\n📄 ${entry.product.name}\n`));
+  console.log(chalk.bold.cyan(`\n📦 ${product.name}\n`));
+  console.log(
+    chalk.gray(
+      `   💰 Giá: ${product.price} | ⭐ ${product.rating} | 🔥 Đã bán: ${product.sold}\n`,
+    ),
+  );
 
-  if (entry.content.script) {
-    console.log(formatScriptOutput(entry.content.script));
+  // Fetch scripts, descriptions, image briefs
+  const scripts = await getVideoScriptsByProductId(product.id, 20);
+  const descriptions = await getPostDescriptionsByProductId(product.id, 20);
+  const imageBriefs = await getImageBriefs(50);
+  const productImageBriefs = imageBriefs.filter(
+    (ib) => ib.productId === product.id,
+  );
+
+  if (
+    scripts.length === 0 &&
+    descriptions.length === 0 &&
+    productImageBriefs.length === 0
+  ) {
+    console.log(chalk.yellow("  📭 Chưa có nội dung nào cho sản phẩm này.\n"));
+    console.log(
+      chalk.gray("  💡 Mẹo: Hãy tạo nội dung trước để xem ở đây nhé!\n"),
+    );
+    return;
   }
-  if (entry.content.description) {
-    console.log(formatDescriptionOutput(entry.content.description));
+
+  // Step 3: Show content options grouped by type
+  const contentChoices: any[] = [];
+
+  if (scripts.length > 0) {
+    contentChoices.push(new inquirer.Separator(" 🎬 KỊCH BẢN VIDEO "));
+    scripts.slice(0, 10).forEach((s, i) => {
+      const date = new Date(s.createdAt).toLocaleDateString("vi-VN");
+      contentChoices.push({
+        name: `  ${i + 1}. [${s.platform}] ${s.title} (${date})`,
+        value: `script_${s.id}`,
+      });
+    });
   }
 
-  const { action } = await inquirer.prompt([
+  if (descriptions.length > 0) {
+    contentChoices.push(new inquirer.Separator(" ✍️ POST DESCRIPTION "));
+    descriptions.slice(0, 10).forEach((d, i) => {
+      const date = new Date(d.createdAt).toLocaleDateString("vi-VN");
+      const hashTagCount = d.hashtags.length;
+      contentChoices.push({
+        name: `  ${i + 1}. [${d.platform}] ${d.headline || d.caption.substring(0, 40)}... (${date}) - ${hashTagCount} hashtags`,
+        value: `desc_${d.id}`,
+      });
+    });
+  }
+
+  if (productImageBriefs.length > 0) {
+    contentChoices.push(new inquirer.Separator(" 🎨 IMAGE BRIEF "));
+    productImageBriefs.slice(0, 10).forEach((ib, i) => {
+      const date = new Date(ib.createdAt).toLocaleDateString("vi-VN");
+      contentChoices.push({
+        name: `  ${i + 1}. [${ib.adPlatform}] ${ib.aspectRatio} (${date})`,
+        value: `brief_${ib.id}`,
+      });
+    });
+  }
+
+  contentChoices.push({ name: "─".repeat(50), value: "sep" });
+  contentChoices.push({
+    name: "🔄  Tạo nội dung mới cho sản phẩm này",
+    value: "regenerate",
+  });
+  contentChoices.push({
+    name: "⏮️  Quay lại danh sách sản phẩm",
+    value: "back",
+  });
+
+  const { selectedContent } = await inquirer.prompt([
     {
       type: "rawlist",
-      name: "action",
-      message: "Làm gì tiếp theo?",
-      choices: [
-        { name: "📋  Copy vào clipboard", value: "copy" },
-        { name: "💾  Xuất ra file txt", value: "export" },
-        { name: "🗑️  Xóa entry này", value: "delete" },
-        { name: "🔄  Tạo lại với sản phẩm này", value: "regenerate" },
-        { name: "⏭️  Quay lại", value: "back" },
-      ],
+      name: "selectedContent",
+      message: "📋 Chọn nội dung để xem chi tiết:",
+      choices: contentChoices,
     },
   ]);
 
-  if (action === "copy") {
-    await copyToClipboard(
-      getFullText(entry.content),
-      `${entry.product.name} - ${entry.workflow}`,
-    );
-  } else if (action === "export") {
-    const filepath = exportToTextFile(
-      entry.content,
-      `${entry.product.name} - ${entry.workflow}`,
-    );
-    console.log(chalk.green(`\n💾 Đã xuất ra file: ${filepath}\n`));
-  } else if (action === "delete") {
-    const { confirm } = await inquirer.prompt([
-      {
-        type: "confirm",
-        name: "confirm",
-        message: `Xác nhận xóa lịch sử "${entry.product.name}"?`,
-        default: false,
-      },
-    ]);
-    if (confirm) {
-      await deleteHistoryEntry(entry.id);
-      console.log(chalk.green("\n🗑️  Đã xóa entry khỏi lịch sử\n"));
-    }
-  } else if (action === "regenerate") {
-    const { workflow } = await inquirer.prompt([
+  if (selectedContent === "back") {
+    await viewHistory();
+    return;
+  }
+
+  if (selectedContent === "regenerate") {
+    const { workflowType } = await inquirer.prompt([
       {
         type: "rawlist",
-        name: "workflow",
-        message: "Chọn workflow:",
+        name: "workflowType",
+        message: "Tạo nội dung gì?",
         choices: [
-          { name: "🎬  Chỉ kịch bản", value: "script" },
-          { name: "✍️  Chỉ mô tả", value: "description" },
+          { name: "🎬  Kịch bản video", value: "script" },
+          { name: "✍️  Caption bài đăng", value: "description" },
+          { name: "🎨  Brief ảnh ads", value: "imagebrief" },
+          { name: "⏮️  Quay lại", value: "back" },
         ],
       },
     ]);
-    if (workflow === "script") {
-      await generateScriptFlow();
-    } else if (workflow === "description") {
-      await generateDescriptionFlow();
+
+    if (workflowType === "script") await generateScriptFlow();
+    else if (workflowType === "description") await generateDescriptionFlow();
+    else if (workflowType === "imagebrief") await generateImageBriefFlow();
+    return;
+  }
+
+  // Step 4: Show selected content detail
+  if (selectedContent.startsWith("script_")) {
+    const scriptId = selectedContent.replace("script_", "");
+    const script = await getVideoScriptById(scriptId);
+    if (script) {
+      console.log(
+        formatScriptOutput({
+          platform: script.platform,
+          title: script.title,
+          hook: script.hook,
+          body: script.body,
+          voiceoverCTA: script.voiceoverCta,
+          wordCount: script.wordCount,
+          estimatedDuration: script.estimatedDuration,
+        }),
+      );
+
+      const { action } = await inquirer.prompt([
+        {
+          type: "rawlist",
+          name: "action",
+          message: "Làm gì tiếp theo?",
+          choices: [
+            { name: "📋  Copy vào clipboard", value: "copy" },
+            { name: "⏮️  Quay lại", value: "back" },
+          ],
+        },
+      ]);
+
+      if (action === "copy") {
+        const text = `[${script.title}]\nHook: ${script.hook}\n${script.body}\nCTA: ${script.voiceoverCta}`;
+        await copyToClipboard(text, "script");
+      }
+    }
+  } else if (selectedContent.startsWith("desc_")) {
+    const descId = selectedContent.replace("desc_", "");
+    const desc = await getPostDescriptionById(descId);
+    if (desc) {
+      console.log(
+        formatDescriptionOutput({
+          platform: desc.platform,
+          headline: desc.headline,
+          content: desc.content,
+          offer: desc.offer,
+          cta: desc.cta,
+          hashtags: desc.hashtags,
+          caption: desc.caption,
+          wordCount: desc.wordCount,
+        }),
+      );
+
+      const { action } = await inquirer.prompt([
+        {
+          type: "rawlist",
+          name: "action",
+          message: "Làm gì tiếp theo?",
+          choices: [
+            { name: "📋  Copy vào clipboard", value: "copy" },
+            { name: "⏮️  Quay lại", value: "back" },
+          ],
+        },
+      ]);
+
+      if (action === "copy") {
+        await copyToClipboard(desc.caption, "caption");
+      }
+    }
+  } else if (selectedContent.startsWith("brief_")) {
+    const briefId = selectedContent.replace("brief_", "");
+    const brief = await getImageBriefById(briefId);
+    if (brief) {
+      console.log(chalk.bold.cyan("\n📸 CREATIVE BRIEF\n"));
+      console.log(
+        chalk.bold(
+          `Format: ${brief.adFormat} | Platform: ${brief.adPlatform} | Ratio: ${brief.aspectRatio}`,
+        ),
+      );
+      console.log(chalk.bold(`Visual: ${brief.visualStyle}`));
+      console.log(chalk.bold(`Colors: ${brief.colorPalette.join(", ")}`));
+      console.log(chalk.green("\n📝 SAFE:\n") + brief.promptSafe);
+      console.log(chalk.yellow("\n📝 BOLD:\n") + brief.promptBold);
+      console.log(chalk.cyan("\n📝 LIFESTYLE:\n") + brief.promptLifestyle);
+      console.log(chalk.red("\n🚫 Negative:\n") + brief.negativePrompt);
+      console.log(chalk.gray("\n📸 Notes:\n") + brief.shootingNotes);
+
+      const { action } = await inquirer.prompt([
+        {
+          type: "rawlist",
+          name: "action",
+          message: "Làm gì tiếp theo?",
+          choices: [
+            { name: "📋  Copy prompts vào clipboard", value: "copy" },
+            { name: "⏮️  Quay lại", value: "back" },
+          ],
+        },
+      ]);
+
+      if (action === "copy") {
+        const text = `IMAGE BRIEF\nFormat: ${brief.adFormat} | Platform: ${brief.adPlatform}\nVisual: ${brief.visualStyle}\nColors: ${brief.colorPalette.join(", ")}\n\nSAFE:\n${brief.promptSafe}\n\nBOLD:\n${brief.promptBold}\n\nLIFESTYLE:\n${brief.promptLifestyle}\n\nNegative: ${brief.negativePrompt}\nNotes: ${brief.shootingNotes}`;
+        await copyToClipboard(text, "image brief");
+      }
     }
   }
 }
