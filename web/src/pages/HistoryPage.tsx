@@ -2,6 +2,15 @@ import { useState, useEffect } from "react";
 import { FileText, MessageSquare, RefreshCw } from "lucide-react";
 import { getHistory } from "../lib/api";
 
+const WORKFLOW_LABELS: Record<string, string> = {
+  script: "Kịch bản",
+  description: "Caption",
+  full: "Đầy đủ",
+  trend: "Trend",
+  image_brief: "Image Brief",
+  short_video: "Short Video",
+};
+
 export default function HistoryPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,13 +31,13 @@ export default function HistoryPage() {
   }, []);
 
   if (loading)
-    return <div className="p-8 text-[var(--text-secondary)]">Loading...</div>;
+    return <div className="p-8 text-[var(--text-secondary)]">Đang tải...</div>;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex items-center justify-between mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl font-bold">
-          History ({history.length})
+          Lịch sử ({history.length})
         </h2>
         <button
           onClick={load}
@@ -45,7 +54,9 @@ export default function HistoryPage() {
             className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-color)] flex items-center justify-between gap-3"
           >
             <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-              {entry.workflow === "script" ? (
+              {entry.workflow === "script" ||
+              entry.workflow === "full" ||
+              entry.workflow === "short_video" ? (
                 <FileText
                   className="text-[var(--accent-pink)] shrink-0"
                   size={18}
@@ -58,11 +69,11 @@ export default function HistoryPage() {
               )}
               <div className="min-w-0">
                 <p className="font-medium text-sm truncate">
-                  {entry.product?.name || "Unknown"}
+                  {entry.product?.name || "Không rõ"}
                 </p>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                  {entry.workflow} •{" "}
-                  {new Date(entry.createdAt).toLocaleString()}
+                  {WORKFLOW_LABELS[entry.workflow] || entry.workflow} •{" "}
+                  {new Date(entry.createdAt).toLocaleString("vi-VN")}
                 </p>
               </div>
             </div>
@@ -73,7 +84,7 @@ export default function HistoryPage() {
         ))}
         {history.length === 0 && (
           <div className="text-center py-12 text-[var(--text-secondary)] text-sm">
-            No history yet
+            Chưa có lịch sử
           </div>
         )}
       </div>

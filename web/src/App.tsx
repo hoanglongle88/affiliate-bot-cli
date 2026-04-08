@@ -18,12 +18,12 @@ import HistoryPage from "./pages/HistoryPage";
 import ServerStatus from "./pages/ServerStatus";
 
 const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/products", icon: Package, label: "Products" },
-  { to: "/scripts", icon: FileText, label: "Scripts" },
-  { to: "/captions", icon: MessageSquare, label: "Captions" },
-  { to: "/history", icon: History, label: "History" },
-  { to: "/server", icon: Server, label: "Server" },
+  { to: "/", icon: LayoutDashboard, label: "Tổng quan" },
+  { to: "/products", icon: Package, label: "Sản phẩm" },
+  { to: "/scripts", icon: FileText, label: "Kịch bản" },
+  { to: "/captions", icon: MessageSquare, label: "Caption" },
+  { to: "/history", icon: History, label: "Lịch sử" },
+  { to: "/server", icon: Server, label: "Máy chủ" },
 ];
 
 export default function App() {
@@ -52,7 +52,7 @@ export default function App() {
                 Affiliate Bot
               </h1>
               <p className="text-xs text-[var(--text-secondary)] mt-1">
-                Dashboard v2.0
+                Bảng điều khiển v2.0
               </p>
             </div>
             <button

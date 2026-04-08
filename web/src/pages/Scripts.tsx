@@ -9,6 +9,14 @@ const PLATFORMS = [
   "facebook_ads",
 ] as const;
 
+const PLATFORM_LABELS: Record<string, string> = {
+  tiktok: "TikTok",
+  youtube: "YouTube Shorts",
+  facebook_reels: "Facebook Reels",
+  instagram_reels: "Instagram Reels",
+  facebook_ads: "Facebook Ads",
+};
+
 export default function Scripts() {
   const [form, setForm] = useState({
     name: "",
@@ -42,9 +50,9 @@ export default function Scripts() {
       });
       const data = await res.json();
       if (data.script) setResult(data.script);
-      else alert(data.error || "Failed to generate");
+      else alert(data.error || "Không thể tạo kịch bản");
     } catch {
-      alert("API server not running. Start with: npm run server");
+      alert("API chưa chạy. Khởi động bằng: npm run server");
     } finally {
       setLoading(false);
     }
@@ -64,7 +72,7 @@ export default function Scripts() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8">
-        Video Scripts
+        Kịch bản Video
       </h2>
 
       <form
@@ -74,7 +82,7 @@ export default function Scripts() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <input
             className={inputClass}
-            placeholder="Product name"
+            placeholder="Tên sản phẩm"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             required
@@ -86,14 +94,14 @@ export default function Scripts() {
           >
             {PLATFORMS.map((p) => (
               <option key={p} value={p}>
-                {p.replace("_", " ")}
+                {PLATFORM_LABELS[p]}
               </option>
             ))}
           </select>
         </div>
         <textarea
           className={`${inputClass} mb-4`}
-          placeholder="Product description"
+          placeholder="Mô tả sản phẩm"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           rows={3}
@@ -101,7 +109,7 @@ export default function Scripts() {
         />
         <input
           className={`${inputClass} mb-4`}
-          placeholder="Price (optional)"
+          placeholder="Giá (tuỳ chọn)"
           value={form.price}
           onChange={(e) => setForm({ ...form, price: e.target.value })}
         />
@@ -115,7 +123,7 @@ export default function Scripts() {
           ) : (
             <Wand2 size={18} />
           )}
-          {loading ? "Generating..." : "Generate Script"}
+          {loading ? "Đang tạo..." : "Tạo kịch bản"}
         </button>
       </form>
 
@@ -134,7 +142,7 @@ export default function Scripts() {
               ) : (
                 <Copy size={14} />
               )}
-              {copied ? "Copied!" : "Copy"}
+              {copied ? "Đã copy!" : "Copy"}
             </button>
           </div>
           <div className="space-y-4 text-sm">
@@ -143,7 +151,7 @@ export default function Scripts() {
               <p className="text-yellow-400">{result.hook}</p>
             </div>
             <div>
-              <p className="text-[var(--text-secondary)] mb-1">📝 Body</p>
+              <p className="text-[var(--text-secondary)] mb-1">📝 Nội dung</p>
               <p className="whitespace-pre-wrap">{result.body}</p>
             </div>
             <div>
@@ -151,7 +159,7 @@ export default function Scripts() {
               <p className="text-[var(--accent-cyan)]">{result.voiceoverCTA}</p>
             </div>
             <div className="flex flex-wrap gap-4 text-[var(--text-secondary)] text-xs pt-2 border-t border-[var(--border-color)]">
-              <span>~{result.wordCount} words</span>
+              <span>~{result.wordCount} từ</span>
               <span>⏱️ {result.estimatedDuration}</span>
             </div>
           </div>

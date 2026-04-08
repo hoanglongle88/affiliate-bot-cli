@@ -14,7 +14,7 @@ export default function ServerStatus() {
       const data = await checkHealth();
       setHealth(data);
     } catch {
-      setError("API server is not running");
+      setError("API chưa chạy hoặc không kết nối được");
       setHealth(null);
     } finally {
       setLoading(false);
@@ -26,12 +26,14 @@ export default function ServerStatus() {
   }, []);
 
   if (loading)
-    return <div className="p-8 text-[var(--text-secondary)]">Checking...</div>;
+    return (
+      <div className="p-8 text-[var(--text-secondary)]">Đang kiểm tra...</div>
+    );
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex items-center justify-between mb-6 sm:mb-8">
-        <h2 className="text-xl sm:text-2xl font-bold">Server Status</h2>
+        <h2 className="text-xl sm:text-2xl font-bold">Trạng thái máy chủ</h2>
         <button
           onClick={load}
           className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:bg-[var(--bg-secondary)]"
@@ -49,7 +51,7 @@ export default function ServerStatus() {
           )}
           <div>
             <p className="text-lg font-semibold">
-              {health ? "Online" : "Offline"}
+              {health ? "Đang hoạt động" : "Ngắt kết nối"}
             </p>
             {error && <p className="text-sm text-red-400">{error}</p>}
           </div>
@@ -59,7 +61,7 @@ export default function ServerStatus() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div className="bg-[var(--bg-secondary)] rounded-lg p-4">
               <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
-                <Clock size={16} /> Uptime
+                <Clock size={16} /> Thời gian chạy
               </div>
               <p className="text-xl font-bold mt-1">
                 {Math.round(health.uptime)}s
@@ -67,7 +69,7 @@ export default function ServerStatus() {
             </div>
             <div className="bg-[var(--bg-secondary)] rounded-lg p-4">
               <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
-                <Clock size={16} /> Timestamp
+                <Clock size={16} /> Thời điểm
               </div>
               <p className="text-xs sm:text-sm mt-1 font-mono break-all">
                 {health.timestamp}
@@ -117,12 +119,12 @@ export default function ServerStatus() {
 
       {!health && (
         <div className="mt-6 bg-[var(--bg-card)] rounded-xl p-4 sm:p-6 border border-[var(--border-color)]">
-          <h3 className="font-semibold mb-2">How to start the server</h3>
+          <h3 className="font-semibold mb-2">Cách khởi động máy chủ</h3>
           <pre className="bg-[var(--bg-secondary)] rounded-lg p-4 text-sm font-mono overflow-x-auto">
             npm run server
           </pre>
           <p className="text-sm text-[var(--text-secondary)] mt-2">
-            Default port: 3000
+            Cổng mặc định: 3000
           </p>
         </div>
       )}

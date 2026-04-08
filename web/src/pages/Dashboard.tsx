@@ -9,7 +9,7 @@ export default function Dashboard() {
     captions: 0,
     trends: 0,
   });
-  const [status, setStatus] = useState<string>("checking...");
+  const [status, setStatus] = useState<string>("đang kiểm tra...");
 
   useEffect(() => {
     const load = async () => {
@@ -35,31 +35,31 @@ export default function Dashboard() {
     load();
 
     checkHealth()
-      .then(() => setStatus("online"))
-      .catch(() => setStatus("offline"));
+      .then(() => setStatus("hoạt động"))
+      .catch(() => setStatus("ngoại tuyến"));
   }, []);
 
   const cards = [
     {
-      label: "Products",
+      label: "Sản phẩm",
       value: stats.products,
       icon: Package,
       color: "text-[var(--accent-cyan)]",
     },
     {
-      label: "Scripts",
+      label: "Kịch bản",
       value: stats.scripts,
       icon: FileText,
       color: "text-[var(--accent-pink)]",
     },
     {
-      label: "Captions",
+      label: "Caption",
       value: stats.captions,
       icon: MessageSquare,
       color: "text-[var(--accent-purple)]",
     },
     {
-      label: "Trend Scans",
+      label: "Quét Trend",
       value: stats.trends,
       icon: TrendingUp,
       color: "text-green-400",
@@ -69,9 +69,9 @@ export default function Dashboard() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
-        <h2 className="text-xl sm:text-2xl font-bold">Dashboard</h2>
+        <h2 className="text-xl sm:text-2xl font-bold">Tổng quan</h2>
         <span
-          className={`self-start px-3 py-1 rounded-full text-sm font-medium ${status === "online" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}
+          className={`self-start px-3 py-1 rounded-full text-sm font-medium ${status === "hoạt động" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}
         >
           API {status}
         </span>
@@ -95,30 +95,32 @@ export default function Dashboard() {
       </div>
 
       <div className="bg-[var(--bg-card)] rounded-xl p-4 sm:p-6 border border-[var(--border-color)]">
-        <h3 className="text-base sm:text-lg font-semibold mb-4">Quick Start</h3>
+        <h3 className="text-base sm:text-lg font-semibold mb-4">
+          Bắt đầu nhanh
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="p-4 bg-[var(--bg-secondary)] rounded-lg">
             <p className="font-medium text-[var(--accent-cyan)]">
-              1. Add Product
+              1. Thêm sản phẩm
             </p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">
-              Import from CSV or add manually
+              Nhập từ CSV hoặc thêm thủ công
             </p>
           </div>
           <div className="p-4 bg-[var(--bg-secondary)] rounded-lg">
             <p className="font-medium text-[var(--accent-pink)]">
-              2. Create Content
+              2. Tạo nội dung
             </p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">
-              Generate scripts & captions
+              Tạo kịch bản & caption tự động
             </p>
           </div>
           <div className="p-4 bg-[var(--bg-secondary)] rounded-lg">
             <p className="font-medium text-[var(--accent-purple)]">
-              3. Export & Use
+              3. Xuất & sử dụng
             </p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">
-              Copy, export, or use TTS
+              Copy, xuất file hoặc dùng TTS
             </p>
           </div>
         </div>

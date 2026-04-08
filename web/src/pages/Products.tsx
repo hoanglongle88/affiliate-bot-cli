@@ -37,17 +37,17 @@ export default function Products() {
       setForm({ name: "", description: "", price: "", rating: "", sold: "" });
       load();
     } catch (e: any) {
-      alert(e.response?.data?.error || "Failed to create");
+      alert(e.response?.data?.error || "Không thể tạo sản phẩm");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this product?")) return;
+    if (!confirm("Xóa sản phẩm này?")) return;
     try {
       await deleteProduct(id);
       load();
     } catch (e) {
-      alert("Failed to delete");
+      alert("Không thể xóa");
     }
   };
 
@@ -59,13 +59,13 @@ export default function Products() {
     "px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] text-sm";
 
   if (loading)
-    return <div className="p-8 text-[var(--text-secondary)]">Loading...</div>;
+    return <div className="p-8 text-[var(--text-secondary)]">Đang tải...</div>;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl font-bold">
-          Products ({products.length})
+          Sản phẩm ({products.length})
         </h2>
         <div className="flex gap-2">
           <button
@@ -76,8 +76,8 @@ export default function Products() {
           </button>
           <button onClick={() => setShowForm(!showForm)} className={btnPrimary}>
             <Plus size={18} />{" "}
-            <span className="hidden sm:inline">Add Product</span>
-            <span className="sm:hidden">Add</span>
+            <span className="hidden sm:inline">Thêm sản phẩm</span>
+            <span className="sm:hidden">Thêm</span>
           </button>
         </div>
       </div>
@@ -90,21 +90,21 @@ export default function Products() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <input
               className={inputClass}
-              placeholder="Product name *"
+              placeholder="Tên sản phẩm *"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
             />
             <input
               className={inputClass}
-              placeholder="Price"
+              placeholder="Giá"
               value={form.price}
               onChange={(e) => setForm({ ...form, price: e.target.value })}
             />
           </div>
           <textarea
             className={`${inputClass} mb-4`}
-            placeholder="Description *"
+            placeholder="Mô tả *"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={3}
@@ -113,27 +113,27 @@ export default function Products() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <input
               className={inputClass}
-              placeholder="Rating"
+              placeholder="Đánh giá"
               value={form.rating}
               onChange={(e) => setForm({ ...form, rating: e.target.value })}
             />
             <input
               className={inputClass}
-              placeholder="Sold"
+              placeholder="Đã bán"
               value={form.sold}
               onChange={(e) => setForm({ ...form, sold: e.target.value })}
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <button type="submit" className={btnPrimary}>
-              Save
+              Lưu
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
               className={btnSecondary}
             >
-              Cancel
+              Hủy
             </button>
           </div>
         </form>
@@ -145,16 +145,16 @@ export default function Products() {
           <thead className="bg-[var(--bg-secondary)]">
             <tr>
               <th className="text-left px-6 py-3 font-medium text-[var(--text-secondary)]">
-                Name
+                Tên
               </th>
               <th className="text-left px-6 py-3 font-medium text-[var(--text-secondary)]">
-                Price
+                Giá
               </th>
               <th className="text-left px-6 py-3 font-medium text-[var(--text-secondary)]">
-                Used
+                Đã dùng
               </th>
               <th className="text-right px-6 py-3 font-medium text-[var(--text-secondary)]">
-                Actions
+                Thao tác
               </th>
             </tr>
           </thead>
@@ -163,7 +163,7 @@ export default function Products() {
               <tr key={p.id} className="border-t border-[var(--border-color)]">
                 <td className="px-6 py-4">{p.name}</td>
                 <td className="px-6 py-4">{p.price}</td>
-                <td className="px-6 py-4">{p.usageCount || 0}</td>
+                <td className="px-6 py-4">{p.usageCount || 0} lần</td>
                 <td className="px-6 py-4 text-right">
                   <button
                     onClick={() => handleDelete(p.id)}
@@ -180,7 +180,7 @@ export default function Products() {
                   colSpan={4}
                   className="px-6 py-8 text-center text-[var(--text-secondary)]"
                 >
-                  No products yet
+                  Chưa có sản phẩm nào
                 </td>
               </tr>
             )}
@@ -198,7 +198,7 @@ export default function Products() {
             <div>
               <p className="font-medium text-sm">{p.name}</p>
               <p className="text-xs text-[var(--text-secondary)] mt-1">
-                {p.price} • Used {p.usageCount || 0}x
+                {p.price} • Đã dùng {p.usageCount || 0} lần
               </p>
             </div>
             <button
@@ -211,7 +211,7 @@ export default function Products() {
         ))}
         {products.length === 0 && (
           <div className="text-center py-12 text-[var(--text-secondary)] text-sm">
-            No products yet
+            Chưa có sản phẩm nào
           </div>
         )}
       </div>
