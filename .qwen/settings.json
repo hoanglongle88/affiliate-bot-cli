@@ -14,7 +14,8 @@
       "Bash(tail *)",
       "Bash(git checkout *)",
       "Bash(find *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(mkdir *)"
     ]
   },
   "$version": 3
