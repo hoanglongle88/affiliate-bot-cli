@@ -128,26 +128,23 @@ async function selectOrEnterProduct(
   }
 
   const displayCount = showAll ? products.length : Math.min(products.length, 5);
-  const choices = products.slice(0, displayCount).map((p, i) => ({
-    name: `${i + 1}. ${p.name} (đã dùng ${p.usageCount} lần)`,
+  const choices = products.slice(0, displayCount).map((p) => ({
+    name: `${p.name} (đã dùng ${p.usageCount} lần)`,
     value: `use_${p.id}`,
   }));
 
   if (!showAll && products.length > 5) {
     choices.push({
-      name: `6. ... Xem thêm (${products.length - 5} sản phẩm khác)`,
+      name: `... Xem thêm (${products.length - 5} sản phẩm khác)`,
       value: "more",
     });
   }
   choices.push({
-    name: `${displayCount + 1}. 🆕 Nhập sản phẩm mới`,
+    name: "🆕 Nhập sản phẩm mới",
     value: "new",
   });
-  choices.push({
-    name: `${displayCount + 2}. ⏮️ Quay lại menu chính`,
-    value: "menu",
-  });
-  choices.push({ name: `${displayCount + 3}. ❌  Thoát`, value: "exit" });
+  choices.push({ name: "⏮️ Quay lại menu chính", value: "menu" });
+  choices.push({ name: "❌  Thoát", value: "exit" });
 
   const { action } = await inquirer.prompt([
     {
@@ -418,7 +415,7 @@ async function pickScriptFromList(
       s.body.length > 60 ? s.body.substring(0, 60) + "..." : s.body;
     const date = new Date(s.createdAt).toLocaleDateString("vi-VN");
     return {
-      name: `${i + 1}. [${s.platform}] ${s.title} (${date})\n     Hook: "${hookPreview}"`,
+      name: `[${s.platform}] ${s.title} (${date})\n     Hook: "${hookPreview}"`,
       value: s.id,
     };
   });
@@ -1086,7 +1083,7 @@ async function viewHistory() {
     const counts: string[] = [];
     if (p.usageCount > 0) counts.push(`${p.usageCount}x nội dung`);
     return {
-      name: `${i + 1}. ${p.name} | ${p.price} | ${counts.join(", ") || "Chưa có nội dung"}`,
+      name: `${p.name} | ${p.price} | ${counts.join(", ") || "Chưa có nội dung"}`,
       value: p.id,
     };
   });
@@ -1437,7 +1434,7 @@ async function manageProducts() {
   }
 
   const choices = products.map((p, i) => ({
-    name: `${i + 1}. ${p.name} | 💰 ${p.price} | 🔥 Đã dùng ${p.usageCount} lần`,
+    name: `${p.name} | 💰 ${p.price} | 🔥 Đã dùng ${p.usageCount} lần`,
     value: p.id,
   }));
 
@@ -1550,7 +1547,7 @@ async function generateTTSFromScript() {
         message: "📜 Chọn kịch bản:",
         choices: [
           ...scriptsOnly.slice(0, 5).map((h: HistoryEntry, i: number) => ({
-            name: `${i + 1}. ${h.product.name} (${new Date(h.createdAt).toLocaleString("vi-VN")})`,
+            name: `${h.product.name} (${new Date(h.createdAt).toLocaleString("vi-VN")})`,
             value: h.id,
           })),
           { name: "🆕  Tạo kịch bản mới", value: "new" },
