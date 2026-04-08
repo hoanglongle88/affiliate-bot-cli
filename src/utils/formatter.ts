@@ -5,153 +5,101 @@ import {
   VideoScript,
   PostDescription,
 } from "../types/content";
-import {
-  boxHeader,
-  sectionHeader,
-  field,
-  fieldHighlight,
-  quotedBlock,
-  divider,
-  infoBlock,
-  quoteBox,
-  badge,
-} from "./ui-helpers";
-
-// ── Video Script Output ──
 
 export function formatScriptOutput(script: VideoScript): string {
-  const platformEmojis: Record<string, string> = {
-    tiktok: "📱",
-    youtube: "▶️",
-    facebook_reels: "📘",
-    instagram_reels: "📸",
-    facebook_ads: "📢",
-  };
-  const platformNames: Record<string, string> = {
-    tiktok: "TIKTOK",
-    youtube: "YOUTUBE SHORTS",
-    facebook_reels: "FACEBOOK REELS",
-    instagram_reels: "INSTAGRAM REELS",
-    facebook_ads: "FACEBOOK ADS",
-  };
+  const platformLabel =
+    script.platform === "tiktok" ? "📱 TIKTOK" : "▶️ YOUTUBE SHORTS";
 
-  const emoji = platformEmojis[script.platform] || "🎬";
-  const platformName = platformNames[script.platform] || "VIDEO";
+  let output = "";
 
-  let out = "";
+  output += chalk.bold.cyan(`\n${platformLabel} SCRIPT\n`);
+  output += chalk.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n");
 
-  // Main box header
-  out += boxHeader(`${emoji} ${platformName} — VIDEO SCRIPT`, chalk.cyan);
+  output +=
+    chalk.bold.yellow("🎬 Tiêu đề: ") + chalk.white(script.title) + "\n\n";
 
-  // Title
-  out += field("🎬 Tiêu đề:", script.title, chalk.white.bold);
+  output +=
+    chalk.bold.green("🎣 Hook (3 giây đầu):\n") +
+    chalk.red.bold(`  "${script.hook}"`) +
+    "\n\n";
 
-  // Hook section
-  out += sectionHeader("HOOK (Mở đầu)", "🎣");
-  out += quoteBox(script.hook, chalk.red);
+  output +=
+    chalk.bold.magenta("📝 Nội dung chính:\n") +
+    chalk.white(`  ${script.body}`) +
+    "\n\n";
 
-  // Body section
-  out += sectionHeader("NỘI DUNG CHÍNH", "📝");
-  out += "\n" + chalk.white(script.body) + "\n\n";
+  output +=
+    chalk.bold.blue("📢 Voiceover CTA (lời thoại cuối video):\n") +
+    chalk.yellow(`  ${script.voiceoverCTA}`) +
+    "\n\n";
 
-  // CTA section
-  out += sectionHeader("CALL TO ACTION", "📢");
-  out += quoteBox(script.voiceoverCTA, chalk.yellow.bold);
+  output += chalk.gray(
+    `📊 Độ dài: ~${script.wordCount} từ | ⏱️ ${script.estimatedDuration}\n`,
+  );
 
-  // Footer info
-  out += divider();
-  out += infoBlock("📊", "Độ dài:", `~${script.wordCount} từ`);
-  out += infoBlock("⏱️", "Thời lượng:", script.estimatedDuration);
-  out += divider();
-
-  return out;
+  return output;
 }
-
-// ── Post Description Output ──
 
 export function formatDescriptionOutput(desc: PostDescription): string {
-  const platformEmojis: Record<string, string> = {
-    tiktok: "📱",
-    youtube: "▶️",
-    facebook_reels: "📘",
-    instagram_reels: "📸",
-    facebook_ads: "📢",
+  const platformLabels: Record<string, string> = {
+    tiktok: "📱 TIKTOK",
+    youtube: "▶️ YOUTUBE SHORTS",
+    facebook_reels: "📘 FACEBOOK REELS",
+    instagram_reels: "📸 INSTAGRAM REELS",
+    facebook_ads: "📢 FACEBOOK ADS",
   };
-  const platformNames: Record<string, string> = {
-    tiktok: "TIKTOK",
-    youtube: "YOUTUBE SHORTS",
-    facebook_reels: "FACEBOOK REELS",
-    instagram_reels: "INSTAGRAM REELS",
-    facebook_ads: "FACEBOOK ADS",
-  };
+  const platformLabel = platformLabels[desc.platform] || "📝 POST";
 
-  const emoji = platformEmojis[desc.platform] || "📝";
-  const platformName = platformNames[desc.platform] || "POST";
+  let output = "";
 
-  let out = "";
+  output += chalk.bold.cyan(`\n${platformLabel} POST DESCRIPTION\n`);
+  output += chalk.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n");
 
-  // Main box header
-  out += boxHeader(`${emoji} ${platformName} — POST DESCRIPTION`, chalk.cyan);
-
-  // Headline
   if (desc.headline) {
-    out += sectionHeader("HEADLINE", "🔥");
-    out += quoteBox(desc.headline, chalk.yellow.bold);
+    output +=
+      chalk.bold.yellow("🔥 Headline:\n") +
+      chalk.white(`  ${desc.headline}`) +
+      "\n\n";
   }
 
-  // Content
   if (desc.content) {
-    out += sectionHeader("CONTENT", "📝");
-    out += "\n" + chalk.white(desc.content) + "\n\n";
+    output +=
+      chalk.bold.green("📝 Content:\n") +
+      chalk.white(`  ${desc.content}`) +
+      "\n\n";
   }
 
-  // Offer
   if (desc.offer) {
-    out += sectionHeader("OFFER / URGENCY", "⚡");
-    out += quoteBox(desc.offer, chalk.magenta.bold);
+    output +=
+      chalk.bold.magenta("⚡ Offer:\n") +
+      chalk.white(`  ${desc.offer}`) +
+      "\n\n";
   }
 
-  // CTA
   if (desc.cta) {
-    out += sectionHeader("CALL TO ACTION", "👉");
-    out += quoteBox(desc.cta, chalk.blue.bold);
+    output +=
+      chalk.bold.blue("👉 CTA:\n") + chalk.yellow(`  ${desc.cta}`) + "\n\n";
   }
 
-  // Hashtags
-  const hashTags = desc.hashtags.map((t) => chalk.green(`#${t}`)).join(" ");
-  out += sectionHeader("HASHTAGS", "🏷️");
-  out += `\n  ${hashTags}\n\n`;
-
-  // Final caption preview
+  // Display final caption
   if (desc.caption) {
-    out += sectionHeader("CAPTION HOÀN CHỈNH (SẴN ĐĂNG)", "📋");
-    const captionLines = desc.caption.split("\n");
-    out += "\n";
-    captionLines.forEach((line) => {
-      if (line.trim().startsWith("#")) {
-        out += chalk.gray("│ ") + chalk.green(line) + "\n";
-      } else if (
-        line.trim().startsWith("🔥") ||
-        line.trim().startsWith("⚡") ||
-        line.trim().startsWith("👉")
-      ) {
-        out += chalk.gray("│ ") + chalk.yellow(line) + "\n";
-      } else {
-        out += chalk.gray("│ ") + chalk.white(line) + "\n";
-      }
+    output += chalk.bold.cyan("📋 Caption hoàn chỉnh (sẵn đăng):\n");
+    output += chalk.gray("  ──────────────────────────────────\n");
+    desc.caption.split("\n").forEach((line) => {
+      output += chalk.gray("  ") + chalk.white(line) + "\n";
     });
-    out += chalk.gray("│\n");
+    output += chalk.gray("  ──────────────────────────────────\n\n");
   }
 
-  // Footer
-  out += divider();
-  out += infoBlock("📊", "Độ dài:", `~${desc.wordCount} từ`);
-  out += divider();
+  // Hashtags with #
+  const hashTags = desc.hashtags.map((t) => `#${t}`).join(" ");
+  output +=
+    chalk.bold.cyan("🏷️ Hashtags:\n") + chalk.cyan(`  ${hashTags}`) + "\n\n";
 
-  return out;
+  output += chalk.gray(`📊 Độ dài: ~${desc.wordCount} từ\n`);
+
+  return output;
 }
-
-// ── Full Output (Script + Description) ──
 
 export function formatFullOutput(content: GeneratedContent): string {
   let output = "";
@@ -181,8 +129,6 @@ export async function copyToClipboard(
   }
 }
 
-// ── Plain Text Extractors ──
-
 export function getScriptText(script: VideoScript): string {
   return `[${script.title}]
 Hook: ${script.hook}
@@ -191,18 +137,8 @@ CTA: ${script.voiceoverCTA}`;
 }
 
 export function getDescriptionText(desc: PostDescription): string {
-  const hashTags = desc.hashtags.map((t) => `#${t}`).join(" ");
-  return desc.caption
-    ? desc.caption
-    : `${desc.headline}
-
-${desc.content}
-
-⚡ ${desc.offer}
-
-👉 ${desc.cta}
-
-${hashTags}`;
+  return `${desc.caption}
+${desc.hashtags.join(" ")}`;
 }
 
 export function getFullText(content: GeneratedContent): string {

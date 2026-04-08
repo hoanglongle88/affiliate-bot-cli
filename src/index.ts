@@ -42,13 +42,6 @@ import {
   savePostDescription,
   saveTrendBrief,
 } from "./data/storage";
-import {
-  cyberHeader,
-  cyberSection,
-  cyberMenuItem,
-  cyberSeparator,
-  cyberFooter,
-} from "./utils/ui-helpers";
 import { TTSService } from "./services/tts-service";
 import { getUsage, resetUsage } from "./services/usage-tracker";
 import { NICHES, getNicheById, getRandomNiche } from "./config/niches";
@@ -1334,116 +1327,58 @@ async function viewUsage() {
 // ── Main Menu ──
 
 async function askMainMenu(): Promise<string> {
-  // Display cyberpunk menu header
-  console.log(cyberHeader());
+  console.log(
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    chalk.bold.cyan("║       🤖  AFFILIATE MARKETING BOT - AI POWERED      ║"),
+  );
+  console.log(
+    chalk.bold.cyan("║           Tự động hóa nội dung Affiliate            ║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
+  );
 
-  const neon = chalk.hex("#00f0ff");
-  const pink = chalk.hex("#ff006e");
-  const purple = chalk.hex("#7b2ff7");
-  const dim = chalk.hex("#8888aa");
-
-  console.log(purple.bold("  📌 CHỌN THAO TÁC:\n"));
-
-  const choices = [
-    // Research section
-    cyberSection("🔍  NGHIÊN CỨU & PHÂN TÍCH XU HƯỚNG", pink),
-    {
-      name: cyberMenuItem(
-        "1",
-        "Trend Researcher",
-        "— Quét trend, tìm sản phẩm hot",
-        "🔥",
-      ),
-      value: "trendscan",
-    },
-
-    // Content creation section
-    cyberSection("✍️  TẠO NỘI DUNG VỚI AI", neon),
-    {
-      name: cyberMenuItem(
-        "2",
-        "Video Creator",
-        "— Kịch bản video TikTok/YouTube",
-        "🎬",
-      ),
-      value: "script",
-    },
-    {
-      name: cyberMenuItem(
-        "3",
-        "Marketing Writer",
-        "— Caption & hashtags bài đăng",
-        "✍️",
-      ),
-      value: "description",
-    },
-    {
-      name: cyberMenuItem(
-        "4",
-        "Image Creator",
-        "— Brief ảnh ads (prompt AI)",
-        "🎨",
-      ),
-      value: "imagebrief",
-    },
-
-    // Utilities section
-    cyberSection("🎨  TIỆN ÍCH & QUẢN LÝ", purple),
-    {
-      name: cyberMenuItem(
-        "5",
-        "TTS Voice",
-        "— Chuyển kịch bản thành giọng nói",
-        "🎤",
-      ),
-      value: "tts",
-    },
-    {
-      name: cyberMenuItem(
-        "6",
-        "History",
-        "— Xem & quản lý nội dung đã tạo",
-        "📜",
-      ),
-      value: "history",
-    },
-    {
-      name: cyberMenuItem("7", "Products", "— Xem & quản lý sản phẩm", "📦"),
-      value: "products",
-    },
-
-    // System section
-    cyberSection("⚙️  HỆ THỐNG", dim),
-    {
-      name: cyberMenuItem(
-        "8",
-        "System Check",
-        "— Kiểm tra kết nối AI providers",
-        "🔧",
-      ),
-      value: "check",
-    },
-    {
-      name: cyberMenuItem(
-        "9",
-        "Usage Stats",
-        "— Xem thống kê sử dụng AI",
-        "📊",
-      ),
-      value: "usage",
-    },
-
-    // Footer
-    cyberSeparator(),
-    { name: cyberMenuItem("0", "Thoát", "", "🚪"), value: "exit" },
-  ];
+  console.log(chalk.bold.yellow("\n📌 TÍNH NĂNG CHÍNH:\n"));
 
   const { action } = await inquirer.prompt([
     {
       type: "rawlist",
       name: "action",
-      message: chalk.hex("#00f0ff").bold("  Chọn số tương ứng:") + " ",
-      choices,
+      message: "👉 Chọn thao tác bạn muốn thực hiện:",
+      choices: [
+        new inquirer.Separator(" 🔍 Nghiên cứu & Phân tích xu hướng "),
+        {
+          name: "[Trend Researcher] - Quét trend, tìm sản phẩm hot theo ngách",
+          value: "trendscan",
+        },
+        new inquirer.Separator(" ✍️ Tạo nội dung với AI "),
+        {
+          name: "[Video Creator] - Tạo kịch bản video TikTok/YouTube",
+          value: "script",
+        },
+        {
+          name: "[Marketing Writer] - Tạo caption & hashtags bài đăng",
+          value: "description",
+        },
+        {
+          name: "[Image Creator] - Tạo brief ảnh ads (prompt AI)",
+          value: "imagebrief",
+        },
+        new inquirer.Separator(" 🎨 Tiện ích & Quản lý "),
+        {
+          name: "[TTS Voice] - Chuyển kịch bản thành giọng nói (Google TTS)",
+          value: "tts",
+        },
+        { name: "[History] - Xem & quản lý nội dung đã tạo", value: "history" },
+        { name: "[Products] - Xem & quản lý sản phẩm", value: "products" },
+        new inquirer.Separator(" ⚙️ Hệ thống "),
+        { name: "[System] - Kiểm tra kết nối AI providers", value: "check" },
+        { name: "[Usage] - Xem thống kê sử dụng AI", value: "usage" },
+        new inquirer.Separator(""),
+        { name: "❌  Thoát chương trình", value: "exit" },
+      ],
     },
   ]);
 
@@ -1453,10 +1388,10 @@ async function askMainMenu(): Promise<string> {
 // ── Main Loop ──
 
 async function mainLoop() {
-  console.log(cyberHeader());
   console.log(
-    chalk.hex("#8888aa")("  AI-Powered Affiliate Content Automation\n"),
+    chalk.bold.magenta("\n👋 Chào mừng bạn đến với Affiliate Marketing Bot!"),
   );
+  console.log(chalk.gray("   Công cụ tự động tạo nội dung Affiliate với AI\n"));
 
   await checkProvidersStatus();
 
@@ -1464,10 +1399,7 @@ async function mainLoop() {
     const action = await askMainMenu();
 
     if (action === "exit") {
-      console.log(cyberFooter());
-      console.log(
-        chalk.hex("#00f0ff").bold("\n  ⚡ SYSTEM OFF — Hẹn gặp lại!\n"),
-      );
+      console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
       process.exit(0);
     }
 
