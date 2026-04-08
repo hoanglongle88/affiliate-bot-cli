@@ -44,24 +44,30 @@ SUPABASE_ANON_KEY=your_key
 
 ## ✨ Tính năng
 
-### 🎯 Menu chính — 7 chức năng
+### 🎯 Menu chính — Cyberpunk UI với neon colors
 
 ```
-🔍 Nghiên cứu & Phân tích xu hướng
-  1. [Trend Researcher] - Quét trend, tìm sản phẩm hot theo ngách
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  ⚡ AFFILIATE BOT v2.0                             ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃  AI-Powered Content Automation                     ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-✍️ Tạo nội dung với AI (đa nền tảng)
-  2. [Video Creator] - Tạo kịch bản video (TikTok/Reels/Shorts/Ads)
-  3. [Marketing Writer] - Tạo caption & hashtags theo nền tảng
-  4. [Image Creator] - Tạo brief ảnh ads (prompt AI)
+  📌 CHỌN THAO TÁC:
 
-🎨 Tiện ích & Quản lý
-  5. [TTS Voice] - Chuyển kịch bản thành giọng nói (Google TTS)
-  6. [History] - Xem & quản lý nội dung đã tạo
-  7. [Products] - Xem & quản lý sản phẩm
-
-⚙️ Hệ thống
-  8. [System] - Kiểm tra kết nối AI providers
+  ──────────────────────────────────────────────────
+  ▸ 🔍  NGHIÊN CỨU & PHÂN TÍCH XU HƯỚNG
+  ──────────────────────────────────────────────────
+   1 │ 🔥 Trend Researcher — Quét trend, tìm sản phẩm hot
+   2 │ 🎬 Video Creator — Kịch bản video TikTok/YouTube
+   3 │ ✍️ Marketing Writer — Caption & hashtags bài đăng
+   4 │ 🎨 Image Creator — Brief ảnh ads (prompt AI)
+   5 │ 🎤 TTS Voice — Chuyển kịch bản thành giọng nói
+   6 │ 📜 History — Xem & quản lý nội dung đã tạo
+   7 │ 📦 Products — Xem & quản lý sản phẩm
+   8 │ 🔧 System Check — Kiểm tra kết nối AI providers
+   9 │ 📊 Usage Stats — Xem thống kê sử dụng AI
+   0 │ 🚪 Thoát
 ```
 
 ### 🌐 5 nền tảng hỗ trợ
