@@ -124,19 +124,24 @@ User Input → Chọn Agent → AI Orchestrator → Ollama/Gemini
 affiliate-bot-cli/
 ├── src/              # Source code TypeScript
 │   ├── agents/       # 5 AI agents
-│   ├── api/routes/   # REST API endpoints
+│   ├── api/routes/   # REST API endpoints (rate limited)
 │   ├── config/       # Niche config
 │   ├── data/         # Storage layer (Supabase)
 │   ├── prompts/      # AI prompt definitions
 │   ├── services/     # AI clients, TTS, etc.
 │   ├── types/        # TypeScript types
-│   ├── utils/        # Helpers
+│   ├── utils/        # Helpers (validators)
 │   └── index.ts      # CLI entry point
 ├── web/              # React Web Dashboard
 │   ├── src/
-│   │   ├── components/  # Reusable UI
-│   │   ├── interfaces/  # TypeScript interfaces
-│   │   ├── lib/         # API client
+│   │   ├── core/        # Shared core module
+│   │   │   ├── components/  # Reusable UI (ErrorBoundary, Tooltip)
+│   │   │   ├── config/      # Axios instance (timeout, interceptors)
+│   │   │   ├── constants/   # App constants
+│   │   │   ├── helper/      # Validation helpers
+│   │   │   ├── hooks/       # Custom hooks (useProducts, useScripts...)
+│   │   │   ├── interfaces/  # TypeScript interfaces
+│   │   │   └── services/    # API clients per module
 │   │   └── pages/       # Page components
 │   └── dist/         # Production build
 ├── output/audio/     # File TTS MP3
@@ -167,11 +172,46 @@ affiliate-bot-cli/
 - [x] Storage: Database riêng cho scripts, descriptions, briefs (Supabase only)
 - [x] Export/Import CSV cho products
 - [x] Web Dashboard (React + Vite + Tailwind)
+- [x] Scripts module: server-side pagination, bulk operations, regenerate, rate limiting
+- [x] Products module: server-side pagination, bulk operations, CSV injection protection, rate limiting
 - [ ] Module 3: Tạo video từ script + voice (FFmpeg)
 - [ ] Module 4: Auto tạo ảnh từ brief (AI Image API)
 - [ ] Module 5: Thống kê & analytics
 
 ---
 
+## 🔒 Bảo mật & Production
+
+### Rate Limiting
+
+| Endpoint                                               | Giới hạn     |
+| ------------------------------------------------------ | ------------ |
+| AI endpoints (scripts, captions, trends, short, image) | 10 req/5min  |
+| Export (scripts)                                       | 3 req/5min   |
+| Export (products)                                      | 5 req/5min   |
+| Import (products)                                      | 5 req/5min   |
+| Bulk delete (scripts)                                  | 15 req/5min  |
+| Bulk delete (products)                                 | 15 req/5min  |
+| Delete all products                                    | 2 req/15min  |
+| General API                                            | 100 req/5min |
+
+### Security
+
+- ✅ CSV injection protection (export escape + import sanitize)
+- ✅ Input validation (length limits, format checks)
+- ✅ Bulk delete capped at 100 IDs per request
+- ✅ Axios timeout (60s) cho AI calls
+- ✅ Centralized error interceptor trên frontend
+- ✅ Delete all confirmation modal (cascade warning)
+
+### Performance
+
+- ✅ Server-side pagination + search + sort (Supabase)
+- ✅ Single-query bulk delete (`.in()` clause)
+- ✅ Search debounce (400ms)
+- ✅ Regenerate keeps same ID (no broken references)
+
+---
+
 **Made with ❤️ for Affiliate Marketers**
-_Cập nhật: 2026-04-08_
+_Cập nhật: 2026-04-09_

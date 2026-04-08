@@ -24,17 +24,17 @@ Công cụ CLI + Web Dashboard tạo nội dung affiliate marketing đa nền t�
 
 ### Web Dashboard (9 pages)
 
-| Page           | Tính năng                                                                                           |
-| -------------- | --------------------------------------------------------------------------------------------------- |
-| **Tổng quan**  | Stats cards (products, scripts, captions, trends) + API status                                      |
-| **Sản phẩm**   | CRUD, sort, search, pagination, import/export CSV, tooltips, toast, optimistic updates, empty state |
-| **Kịch bản**   | Form tạo script video với AI                                                                        |
-| **Caption**    | Form tạo caption bài đăng với AI                                                                    |
-| **Quét Trend** | Auto/manual scan trend sản phẩm                                                                     |
-| **Video Veo**  | Storyboard timeline cho AI video generation                                                         |
-| **Brief Ảnh**  | 3 prompts (safe/bold/lifestyle) + color palette                                                     |
-| **Lịch sử**    | Danh sách entries theo sản phẩm                                                                     |
-| **Máy chủ**    | Health check + API endpoints list                                                                   |
+| Page           | Tính năng                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Tổng quan**  | Stats cards (products, scripts, captions, trends) + API status                                                                             |
+| **Sản phẩm**   | CRUD, server-side search/sort/pagination, import/export CSV (formula injection protected), bulk delete, USP field, delete-all confirmation |
+| **Kịch bản**   | Form tạo script với product selector (autocomplete, auto-fill), platform filter, bulk select/delete/export, regenerate, copy per-section   |
+| **Caption**    | Form tạo caption bài đăng với AI                                                                                                           |
+| **Quét Trend** | Auto/manual scan trend sản phẩm                                                                                                            |
+| **Video Veo**  | Storyboard timeline cho AI video generation                                                                                                |
+| **Brief Ảnh**  | 3 prompts (safe/bold/lifestyle) + color palette                                                                                            |
+| **Lịch sử**    | Danh sách entries theo sản phẩm                                                                                                            |
+| **Máy chủ**    | Health check + API endpoints list                                                                                                          |
 
 ---
 
@@ -144,13 +144,20 @@ type Platform =
 - 🎨 **UI chuẩn UX** — Back/exit nhất quán, tooltips, toast notifications
 - ✏️ Chỉnh sửa hook/body/CTA/caption trong editor
 - 💾 Copy clipboard / Export `.txt` / Import-Export CSV
-- 📊 Sort (6 options), search (debounce 300ms), pagination (10/page)
+- 📊 Server-side sort (6 options), search (debounce 400ms), pagination
 - 🔄 Optimistic updates với rollback khi lỗi
 - 📦 Empty state với CTA khi không có dữ liệu
 - 📋 Chọn script đã lưu làm context cho caption (4 nguồn)
 - ⏳ Progress indicator với elapsed time cho mọi AI call
 - 🌐 Responsive: desktop table ↔ mobile cards
+- 🔒 **Rate limiting** — AI: 10/5min, Export: 3-5/5min, Bulk: 15/5min, DeleteAll: 2/15min
+- 🛡️ **CSV injection protection** — Export escape + Import sanitize
+- ♻️ **Regenerate script** — Giữ nguyên ID, không gãy reference
+- ☑️ **Bulk operations** — Checkbox chọn nhiều, delete/export hàng loạt
+- 🔍 **Product selector** — Autocomplete + auto-fill tất cả fields (name, desc, price, rating, sold, USP)
+- ⏱️ **Axios timeout 60s** + centralized error interceptor
+- ✅ **Backend validation** — Length limits, format checks, trim whitespace
 
 ---
 
-_Cập nhật: 2026-04-08_
+_Cập nhật: 2026-04-09_
