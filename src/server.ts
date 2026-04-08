@@ -15,8 +15,10 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+import swaggerUi from "swagger-ui-express";
 import path from "path";
 import fs from "fs";
+import { swaggerSpec } from "./swagger";
 import scriptsRouter from "./api/routes/scripts";
 import captionsRouter from "./api/routes/captions";
 import productsRouter from "./api/routes/products";
@@ -52,6 +54,16 @@ const aiLimiter = rateLimit({
 app.use(cors());
 app.use(express.json());
 app.use(generalLimiter); // Apply global rate limit
+
+// Swagger API docs
+app.use(
+  "/api/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: "Affiliate Bot API",
+    customCss: ".swagger-ui .topbar { display: none }",
+  }),
+);
 
 // Health check
 app.get("/api/health", (_req, res) => {

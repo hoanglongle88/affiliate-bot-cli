@@ -594,7 +594,7 @@ function ProductsContent() {
           </div>
         ) : products.length === 0 ? (
           /* Empty state */
-          <div className="flex h-64 flex-col items-center justify-center px-4 text-center">
+          <div className="flex h-full flex-col items-center justify-center px-4 text-center">
             <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--bg-card)]">
               <FileUp size={32} className="text-[var(--text-secondary)]" />
             </div>
@@ -608,10 +608,10 @@ function ProductsContent() {
             </p>
             <div className="flex gap-2">
               <button onClick={() => setShowForm(true)} className={btnPrimary}>
-                <Plus size={16} /> Thêm sản phẩm
+                Thêm sản phẩm
               </button>
               <button onClick={handleImportClick} className={btnSecondary}>
-                <FileUp size={16} /> Nhập CSV
+                Nhập CSV
               </button>
             </div>
           </div>
