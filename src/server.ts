@@ -23,6 +23,7 @@ import trendsRouter from "./api/routes/trends";
 import historyRouter from "./api/routes/history";
 import shortRouter from "./api/routes/short";
 import imageRouter from "./api/routes/image";
+import statsRouter from "./api/routes/stats";
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use("/api/trends", trendsRouter);
 app.use("/api/history", historyRouter);
 app.use("/api/short", shortRouter);
 app.use("/api/image", imageRouter);
+app.use("/api/stats", statsRouter);
 
 // Serve web dashboard in production
 const webDist = path.join(__dirname, "../web/dist");

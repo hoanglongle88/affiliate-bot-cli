@@ -153,3 +153,18 @@ export const getHistory = () =>
 // Health
 export const checkHealth = () =>
   api.get<HealthResponse>("/health").then((r) => r.data);
+
+// Dashboard Stats
+interface DashboardStats {
+  totalProducts: number;
+  totalScripts: number;
+  totalDescriptions: number;
+  totalTrends: number;
+  totalShorts: number;
+  totalImages: number;
+  totalHistory: number;
+  historyByWorkflow: Record<string, number>;
+  recentProducts: any[];
+}
+export const getDashboardStats = () =>
+  api.get<DashboardStats>("/stats").then((r) => r.data);

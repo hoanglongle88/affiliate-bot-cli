@@ -6,7 +6,7 @@ import {
   TrendingUp,
   AlertCircle,
 } from "lucide-react";
-import { getProducts, getHistory, checkHealth } from "../lib/api";
+import { getDashboardStats, checkHealth } from "../lib/api";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -21,20 +21,12 @@ export default function Dashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [productsRes, history] = await Promise.all([
-          getProducts({ limit: 1 }), // Chỉ lấy 1 để lấy total count
-          getHistory(),
-        ]);
-        const scripts = history.filter((h) => h.workflow === "script").length;
-        const captions = history.filter(
-          (h) => h.workflow === "description",
-        ).length;
-        const trends = history.filter((h) => h.workflow === "trend").length;
+        const data = await getDashboardStats();
         setStats({
-          products: productsRes.products.length,
-          scripts,
-          captions,
-          trends,
+          products: data.totalProducts,
+          scripts: data.totalScripts,
+          captions: data.totalDescriptions,
+          trends: data.totalTrends,
         });
         setError(null);
       } catch (e) {
