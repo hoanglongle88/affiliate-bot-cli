@@ -4,7 +4,7 @@ Công cụ tạo nội dung affiliate marketing tự động sử dụng AI (Oll
 
 ## 📋 Tổng quan
 
-**Affiliate Bot CLI** là công cụ dòng lệnh (CLI) giúp tự động hóa việc tạo nội dung affiliate marketing đa nền tảng. Sử dụng AI (Ollama local hoặc Google Gemini cloud), công cụ có thể:
+**Affiliate Bot CLI** là công cụ dòng lệnh (CLI) kết hợp **Web Dashboard** giúp tự động hóa việc tạo nội dung affiliate marketing đa nền tảng. Sử dụng AI (Ollama local hoặc Google Gemini cloud), công cụ có thể:
 
 - 🔍 **Quét trend tự động**: Nghiên cứu xu hướng thị trường, tìm sản phẩm hot
 - 🎬 **Tạo kịch bản video**: Kịch bản 30-60 giây tối ưu cho TikTok/Reels/Shorts
@@ -13,7 +13,7 @@ Công cụ tạo nội dung affiliate marketing tự động sử dụng AI (Oll
 - 🎬 **Tạo video prompt cho AI Veo**: Storyboard timeline chi tiết từ kịch bản
 - 🎤 **Chuyển giọng nói AI**: Text-to-Speech tiếng Việt
 - 📦 **Quản lý thông minh**: Lưu sản phẩm, lịch sử, tái sử dụng qua Supabase
-- 📥 **Import CSV hàng loạt**: Nhập sản phẩm từ file Shopee Affiliate
+- 📥 **Import/Export CSV**: Nhập xuất sản phẩm hàng loạt
 
 ## 🚀 Cài đặt nhanh
 
@@ -22,7 +22,9 @@ cd affiliate-bot-cli
 npm install
 cp .env.example .env
 # Cấu hình SUPABASE_URL và SUPABASE_ANON_KEY trong .env
-npm run dev
+npm run dev        # Chạy CLI
+npm run server     # Chạy API Server
+npm run web        # Chạy Web Dashboard (dev)
 ```
 
 ## ⚙️ Cấu hình .env
@@ -121,7 +123,22 @@ User Input → Chọn Agent → AI Orchestrator → Ollama/Gemini
 ```
 affiliate-bot-cli/
 ├── src/              # Source code TypeScript
-├── dist/             # Compiled JavaScript (auto-generated)
+│   ├── agents/       # 5 AI agents
+│   ├── api/routes/   # REST API endpoints
+│   ├── config/       # Niche config
+│   ├── data/         # Storage layer (Supabase)
+│   ├── prompts/      # AI prompt definitions
+│   ├── services/     # AI clients, TTS, etc.
+│   ├── types/        # TypeScript types
+│   ├── utils/        # Helpers
+│   └── index.ts      # CLI entry point
+├── web/              # React Web Dashboard
+│   ├── src/
+│   │   ├── components/  # Reusable UI
+│   │   ├── interfaces/  # TypeScript interfaces
+│   │   ├── lib/         # API client
+│   │   └── pages/       # Page components
+│   └── dist/         # Production build
 ├── output/audio/     # File TTS MP3
 ├── exports/          # File export .txt
 ├── data/             # CSV files để import
@@ -148,8 +165,8 @@ affiliate-bot-cli/
 - [x] Module 2.6: Image Creator (creative brief)
 - [x] Module 2.7: Short Creator (video prompt cho AI Veo)
 - [x] Storage: Database riêng cho scripts, descriptions, briefs (Supabase only)
-- [x] Export: File .txt chung cho image brief + post description
-- [x] Import CSV: Nhập sản phẩm hàng loạt từ Shopee Affiliate
+- [x] Export/Import CSV cho products
+- [x] Web Dashboard (React + Vite + Tailwind)
 - [ ] Module 3: Tạo video từ script + voice (FFmpeg)
 - [ ] Module 4: Auto tạo ảnh từ brief (AI Image API)
 - [ ] Module 5: Thống kê & analytics
