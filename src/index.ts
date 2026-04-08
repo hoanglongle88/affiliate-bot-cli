@@ -946,6 +946,7 @@ async function viewHistory() {
           message: "Làm gì tiếp theo?",
           choices: [
             { name: "📋  Copy vào clipboard", value: "copy" },
+            { name: "💾  Xuất ra file txt", value: "export" },
             { name: "⏮️  Quay lại", value: "back" },
           ],
         },
@@ -954,6 +955,29 @@ async function viewHistory() {
       if (action === "copy") {
         const text = `[${script.title}]\nHook: ${script.hook}\n${script.body}\nCTA: ${script.voiceoverCta}`;
         await copyToClipboard(text, "script");
+      } else if (action === "export") {
+        const filepath = exportToTextFile(
+          {
+            product: {
+              name: product.name,
+              price: product.price,
+              rating: product.rating,
+              sold: product.sold,
+              description: product.description,
+            },
+            script: {
+              platform: script.platform,
+              title: script.title,
+              hook: script.hook,
+              body: script.body,
+              voiceoverCTA: script.voiceoverCta,
+              wordCount: script.wordCount,
+              estimatedDuration: script.estimatedDuration,
+            },
+          },
+          `Script - ${product.name}`,
+        );
+        console.log(chalk.green(`\n💾 Đã xuất file: ${filepath}\n`));
       }
     }
   } else if (selectedContent.startsWith("desc_")) {
@@ -980,6 +1004,7 @@ async function viewHistory() {
           message: "Làm gì tiếp theo?",
           choices: [
             { name: "📋  Copy vào clipboard", value: "copy" },
+            { name: "💾  Xuất ra file txt", value: "export" },
             { name: "⏮️  Quay lại", value: "back" },
           ],
         },
@@ -987,6 +1012,30 @@ async function viewHistory() {
 
       if (action === "copy") {
         await copyToClipboard(desc.caption, "caption");
+      } else if (action === "export") {
+        const filepath = exportToTextFile(
+          {
+            product: {
+              name: product.name,
+              price: product.price,
+              rating: product.rating,
+              sold: product.sold,
+              description: product.description,
+            },
+            description: {
+              platform: desc.platform,
+              headline: desc.headline || "",
+              content: desc.content || "",
+              offer: desc.offer || "",
+              caption: desc.caption,
+              hashtags: desc.hashtags,
+              cta: desc.cta,
+              wordCount: desc.wordCount,
+            },
+          },
+          `Caption - ${product.name}`,
+        );
+        console.log(chalk.green(`\n💾 Đã xuất file: ${filepath}\n`));
       }
     }
   } else if (selectedContent.startsWith("brief_")) {
@@ -1022,6 +1071,26 @@ async function viewHistory() {
       if (action === "copy") {
         const text = `IMAGE BRIEF\nFormat: ${brief.adFormat} | Platform: ${brief.adPlatform}\nVisual: ${brief.visualStyle}\nColors: ${brief.colorPalette.join(", ")}\n\nSAFE:\n${brief.promptSafe}\n\nBOLD:\n${brief.promptBold}\n\nLIFESTYLE:\n${brief.promptLifestyle}\n\nNegative: ${brief.negativePrompt}\nNotes: ${brief.shootingNotes}`;
         await copyToClipboard(text, "image brief");
+      } else if (action === "export") {
+        const filepath = exportImageBrief(
+          product.name,
+          { price: product.price, rating: product.rating, sold: product.sold },
+          {
+            adFormat: brief.adFormat,
+            visualStyle: brief.visualStyle,
+            colorPalette: brief.colorPalette,
+            prompts: {
+              safe: brief.promptSafe,
+              bold: brief.promptBold,
+              lifestyle: brief.promptLifestyle,
+            },
+            negativePrompt: brief.negativePrompt,
+            shootingNotes: brief.shootingNotes,
+          },
+          brief.adPlatform,
+          brief.aspectRatio,
+        );
+        console.log(chalk.green(`\n💾 Đã xuất file: ${filepath}\n`));
       }
     }
   }
