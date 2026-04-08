@@ -71,17 +71,17 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/products/export - Export all products as CSV
+// GET /api/products/export - Export ALL products as CSV
 router.get("/export", async (_req: Request, res: Response) => {
   try {
     const allProducts = await getProducts();
 
     const header =
-      "Mã sản phẩm,Tên sản phẩm,Giá,Đánh giá,Đã bán,Lượt dùng,Ngày tạo\n";
+      "Mã sản phẩm,Tên sản phẩm,Mô tả,Giá,Đánh giá,Đã bán,Lượt dùng,Ngày tạo\n";
     const rows = allProducts
       .map(
         (p) =>
-          `${p.id},"${p.name.replace(/"/g, '""')}",${p.price},${p.rating},${p.sold},${p.usageCount || 0},${p.createdAt}`,
+          `${p.id},"${p.name.replace(/"/g, '""')}","${p.description.replace(/"/g, '""')}",${p.price},${p.rating},${p.sold},${p.usageCount || 0},${p.createdAt}`,
       )
       .join("\n");
 
@@ -98,7 +98,7 @@ router.get("/export", async (_req: Request, res: Response) => {
   }
 });
 
-// POST /api/products/import - Import products from CSV
+// POST /api/products/import - Import ALL products from CSV
 router.post("/import", async (req: Request, res: Response) => {
   try {
     const { csvContent } = req.body;
@@ -126,12 +126,14 @@ router.post("/import", async (req: Request, res: Response) => {
           continue;
         }
 
+        // Check if product with this name already exists → update
+        // saveProduct does upsert by name automatically
         await saveProduct({
           name,
-          description: row["Mô tả"] || name,
-          price: row["Giá"] || "Chưa có",
-          rating: row["Đánh giá"] || "Chưa có",
-          sold: row["Đã bán"] || "Chưa có",
+          description: row["Mô tả"]?.trim() || name,
+          price: row["Giá"]?.trim() || "Chưa có",
+          rating: row["Đánh giá"]?.trim() || "Chưa có",
+          sold: row["Đã bán"]?.trim() || "Chưa có",
         });
         success++;
       } catch (e: any) {
@@ -144,7 +146,7 @@ router.post("/import", async (req: Request, res: Response) => {
       success,
       skipped,
       errors,
-      message: `Imported ${success} products`,
+      message: `Imported ${success} products, ${skipped} skipped`,
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
