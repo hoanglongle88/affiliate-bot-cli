@@ -1,52 +1,53 @@
-import { Platform } from "./video-creator";
-
-export const SHORT_CREATOR_SYSTEM_PROMPT = `Bạn là Đạo diễn hình ảnh và Chuyên gia kỹ thuật Prompt cho AI Video (Veo). Nhiệm vụ của bạn là biến những gợi ý cảnh quay (Visual Cues) từ kịch bản kịch bản thành một câu lệnh mô tả video (Prompt) chi tiết và chuyên nghiệp.
+export const SHORT_CREATOR_SYSTEM_PROMPT = `Bạn là Đạo diễn hình ảnh và Biên tập viên hậu kỳ chuyên nghiệp. Nhiệm vụ của bạn là đọc kịch bản video và tạo ra một "Storyboard Timeline" chi tiết cho AI Veo.
 
 QUY TRÌNH TƯ DUY:
-1. Phân tích Chủ thể: Sản phẩm trông như thế nào? Chất liệu, góc cạnh, nhãn hiệu.
-2. Phân tích Chuyển động: Sản phẩm xoay, di chuyển hay có tác động từ tay người?
-3. Thiết lập Ánh sáng & Góc máy: Cinematic, Macro (cận cảnh), Studio lighting, hay Natural light.
-4. Tối ưu theo Nền tảng: TikTok cần sự thực tế; Instagram cần sự sang chảnh, thẩm mỹ.
+1. Tính toán nhịp điệu: Dựa trên tổng thời gian (estimatedDuration), chia video thành 3 giai đoạn chính: Hook (10%), Body (75%), CTA (15%).
+2. Khớp hình với chữ: Mỗi câu trong kịch bản phải có một mô tả hình ảnh tương ứng.
+3. Kỹ thuật Prompt Veo: Mô tả bằng tiếng Anh, tập trung vào chuyển động (motion), góc máy (camera angle) và sự thay đổi bối cảnh theo thời gian.
 
-QUY TẮC ĐẦU RA:
-- Trường "video_prompt" PHẢI viết bằng tiếng Anh để model Veo hiểu chính xác nhất.
-- Mô tả phải liền mạch, tập trung vào sự nhất quán về hình ảnh từ đầu đến cuối video.
-- Sử dụng các thuật ngữ chuyên môn: "Hyper-realistic", "Soft bokeh background", "Dynamic motion".
+QUY TẮC TIMELINE:
+- Mỗi phân cảnh phải có mốc thời gian bắt đầu và kết thúc (vd: 00s-05s).
+- Các cảnh quay phải có tính tiếp nối (seamless transition), không rời rạc.
+- Ngôn ngữ: "video_prompt_timeline" viết bằng TIẾNG ANH.
 
 Output BẮT BUỘC là JSON thuần:
 {
-  "style_analysis": "Phân tích phong cách hình ảnh bằng tiếng Việt (vd: Sang trọng/Năng động)",
-  "video_prompt": "Câu lệnh mô tả video chi tiết bằng TIẾNG ANH",
-  "aspect_ratio": "9:16",
-  "visual_quality": "1080p, 60fps, cinematic color grading"
+  "total_duration": "Tổng thời gian (s)",
+  "visual_style": "Mô tả phong cách visual (Tiếng Việt)",
+  "timeline": [
+    {
+      "range": "00s-05s",
+      "content": "Mô tả nội dung lời thoại tương ứng (Tiếng Việt)",
+      "prompt": "Detailed English prompt for this segment (focus on visuals/motion)"
+    }
+  ],
+  "video_prompt_full": "Một đoạn văn tiếng Anh tổng hợp toàn bộ timeline để gửi cho Veo gen 1 lần"
 }`;
 
 export function buildShortCreatorUserPrompt(
   productName: string,
-  visualCues: string[], // Lấy từ kết quả của Agent VideoScript
-  angle: string, // Lấy từ kết quả của Agent VideoScript
-  platform: Platform,
+  scriptData: {
+    platform: string;
+    hook: string;
+    body: string;
+    voiceoverCTA: string;
+    estimatedDuration: string; // Ví dụ: "38 giây"
+  },
 ): string {
-  const platformStyle: Record<Platform, string> = {
-    tiktok:
-      "Phong cách quay bằng điện thoại, đời thường, màu sắc tươi sáng, nhịp cắt nhanh.",
-    youtube:
-      "Chất lượng cao, tập trung vào tính năng sản phẩm, ánh sáng studio rõ nét.",
-    facebook_reels:
-      "Góc máy trực diện, tập trung vào hành động sử dụng sản phẩm thực tế.",
-    instagram_reels:
-      "Nghệ thuật, quay chậm (slow-motion), ánh sáng lung linh, vibe sang trọng.",
-    facebook_ads:
-      "Chuyên nghiệp, tin cậy, quay cận cảnh các chi tiết đắt giá của sản phẩm.",
-  };
+  const durationInSeconds = parseInt(scriptData.estimatedDuration) || 30;
 
-  return `Hãy tạo Prompt cho Veo để sản xuất video ngắn cho sản phẩm: "${productName}".
+  return `Hãy lập lộ trình hình ảnh (Timeline Storyboard) cho video sản phẩm: "${productName}".
 
-[Nguyên liệu từ kịch bản]:
-- Các cảnh quay chính: ${visualCues.join(", ")}
-- Góc tiếp cận Marketing: ${angle}
-- Phong cách nền tảng: ${platformStyle[platform]}
+[Kịch bản chi tiết]:
+- Thời lượng: ${scriptData.estimatedDuration}
+- Mở đầu (Hook): ${scriptData.hook}
+- Nội dung chính (Body): ${scriptData.body}
+- Kết thúc (CTA): ${scriptData.voiceoverCTA}
 
-Yêu cầu: 
-Dựa trên các cảnh quay trên, hãy viết một câu 'video_prompt' tiếng Anh cực kỳ chi tiết. Đảm bảo video thể hiện được sự khao khát sở hữu sản phẩm ngay từ những giây đầu tiên.`;
+[Yêu cầu kỹ thuật]:
+1. Chia tổng thời gian ${durationInSeconds}s thành các phân cảnh nhỏ khớp với nội dung kịch bản.
+2. Với mỗi phân cảnh, hãy viết 'prompt' tiếng Anh mô tả chi tiết: góc máy (macro/wide), ánh sáng (studio/natural), và chuyển động của chủ thể.
+3. Đảm bảo cảnh cuối cùng (CTA) hiển thị rõ sản phẩm và tạo cảm giác thúc giục mua hàng.
+
+Hãy tạo ra một chuỗi hình ảnh logic và có tính thuyết phục cao nhất cho nền tảng ${scriptData.platform.toUpperCase()}.`;
 }
