@@ -318,7 +318,7 @@ async function editText(currentText: string, label: string): Promise<string> {
     {
       type: "editor",
       name: "edit",
-      message: `✏️  Chỉnh sửa ${label} (mở editor, Ctrl+D hoặc Esc để thoát):`,
+      message: `✏️  Chỉnh sửa ${label} (lưu file editor để tiếp tục):`,
       default: currentText,
     },
   ]);
@@ -421,6 +421,7 @@ async function pickScriptFromList(
   });
 
   choices.push({ name: "⏮️ Quay lại chọn nguồn", value: "back" });
+  choices.push({ name: "❌  Thoát", value: "exit" });
 
   const { selectedScript } = await inquirer.prompt([
     {
@@ -431,6 +432,10 @@ async function pickScriptFromList(
     },
   ]);
 
+  if (selectedScript === "exit") {
+    console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+    process.exit(0);
+  }
   if (selectedScript === "back") {
     return selectScriptContext();
   }
@@ -455,7 +460,7 @@ async function pickScriptFromList(
 async function handlePostActions(
   type: "script" | "description",
   content: GeneratedContent,
-): Promise<"back" | "menu" | "exit"> {
+): Promise<"back" | "menu" | "exit" | "regenerate"> {
   while (true) {
     const choices = [
       { name: "📋  Copy vào clipboard", value: "copy" },
@@ -543,12 +548,9 @@ async function handlePostActions(
     }
 
     if (action === "regenerate") {
-      if (type === "script") {
-        await generateScriptFlow();
-      } else if (type === "description") {
-        await generateDescriptionFlow();
-      }
-      return "exit";
+      // Return "regenerate" to caller - caller handles re-generation
+      // without creating nested post-actions loops
+      return "regenerate";
     }
   }
 }
@@ -591,6 +593,18 @@ async function generateScriptFlow() {
   const result = await handlePostActions("script", content);
   if (result === "back") {
     await generateScriptFlow();
+  } else if (result === "regenerate") {
+    // Re-generate inline without creating nested post-actions
+    const newScript = await generateWithRetry(
+      () => agent.generateScript(product, platform),
+      (s) => validateScript(s),
+    );
+    console.log(formatScriptOutput(newScript));
+    await saveVideoScript(newScript, productId);
+    content.script = newScript;
+    // Loop back to post-actions
+    const nextResult = await handlePostActions("script", content);
+    if (nextResult === "back") await generateScriptFlow();
   }
 }
 
@@ -684,6 +698,17 @@ async function generateDescriptionFlow() {
   const result = await handlePostActions("description", content);
   if (result === "back") {
     await generateDescriptionFlow();
+  } else if (result === "regenerate") {
+    // Re-generate inline
+    const newDesc = await generateWithRetry(
+      () => agent.generateDescription(product, scriptContext, platform),
+      (d) => validateDescription(d),
+    );
+    console.log(formatDescriptionOutput(newDesc));
+    const savedDesc = await savePostDescription(newDesc, productId, scriptDbId);
+    content.description = newDesc;
+    const nextResult = await handlePostActions("description", content);
+    if (nextResult === "back") await generateDescriptionFlow();
   }
 }
 
@@ -1155,10 +1180,10 @@ async function viewHistory() {
 
   if (scripts.length > 0) {
     contentChoices.push(new inquirer.Separator(" 🎬 KỊCH BẢN VIDEO "));
-    scripts.slice(0, 10).forEach((s, i) => {
+    scripts.slice(0, 10).forEach((s) => {
       const date = new Date(s.createdAt).toLocaleDateString("vi-VN");
       contentChoices.push({
-        name: `  ${i + 1}. [${s.platform}] ${s.title} (${date})`,
+        name: `[${s.platform}] ${s.title} (${date})`,
         value: `script_${s.id}`,
       });
     });
@@ -1166,11 +1191,11 @@ async function viewHistory() {
 
   if (descriptions.length > 0) {
     contentChoices.push(new inquirer.Separator(" ✍️ POST DESCRIPTION "));
-    descriptions.slice(0, 10).forEach((d, i) => {
+    descriptions.slice(0, 10).forEach((d) => {
       const date = new Date(d.createdAt).toLocaleDateString("vi-VN");
       const hashTagCount = d.hashtags.length;
       contentChoices.push({
-        name: `  ${i + 1}. [${d.platform}] ${d.headline || d.caption.substring(0, 40)}... (${date}) - ${hashTagCount} hashtags`,
+        name: `[${d.platform}] ${d.headline || d.caption.substring(0, 40)}... (${date}) - ${hashTagCount} hashtags`,
         value: `desc_${d.id}`,
       });
     });
@@ -1178,10 +1203,10 @@ async function viewHistory() {
 
   if (productImageBriefs.length > 0) {
     contentChoices.push(new inquirer.Separator(" 🎨 IMAGE BRIEF "));
-    productImageBriefs.slice(0, 10).forEach((ib, i) => {
+    productImageBriefs.slice(0, 10).forEach((ib) => {
       const date = new Date(ib.createdAt).toLocaleDateString("vi-VN");
       contentChoices.push({
-        name: `  ${i + 1}. [${ib.adPlatform}] ${ib.aspectRatio} (${date})`,
+        name: `[${ib.adPlatform}] ${ib.aspectRatio} (${date})`,
         value: `brief_${ib.id}`,
       });
     });
@@ -1558,7 +1583,10 @@ async function generateTTSFromScript() {
     if (source === "new") {
       console.log(chalk.yellow("\n🎬 Tạo kịch bản mới trước...\n"));
       const { product, productId } = await selectOrEnterProduct();
-      if (!product.name) return;
+      if (!product.name) {
+        console.log(chalk.yellow("\n⚠️  Đã hủy tạo script.\n"));
+        return;
+      }
       const plat = await selectPlatform();
 
       const agent = new VideoCreatorAgent();
@@ -1584,7 +1612,10 @@ async function generateTTSFromScript() {
   } else {
     console.log(chalk.yellow("\n📭 Chưa có kịch bản nào. Tạo mới...\n"));
     const { product, productId } = await selectOrEnterProduct();
-    if (!product.name) return;
+    if (!product.name) {
+      console.log(chalk.yellow("\n⚠️  Đã hủy tạo script.\n"));
+      return;
+    }
     const plat = await selectPlatform();
 
     const agent = new VideoCreatorAgent();
@@ -1698,10 +1729,15 @@ async function generateTrendScanFlow() {
             value: n.id,
           })),
           { name: "⏮️  Quay lại menu chính", value: "menu" },
+          { name: "❌  Thoát", value: "exit" },
         ],
       },
     ]);
 
+    if (selectedNiche === "exit") {
+      console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+      process.exit(0);
+    }
     if (selectedNiche === "menu") return;
 
     niche = getNicheById(selectedNiche);
@@ -1769,6 +1805,17 @@ async function generateTrendScanFlow() {
       const content: GeneratedContent = { product, script };
       const result = await handlePostActions("script", content);
       if (result === "back") continue;
+      if (result === "regenerate") {
+        const newScript = await generateWithRetry(
+          () => videoCreator.generateScript(product, platform),
+          (s) => validateScript(s),
+        );
+        console.log(formatScriptOutput(newScript));
+        await saveVideoScript(newScript, productId);
+        content.script = newScript;
+        const nextResult = await handlePostActions("script", content);
+        if (nextResult === "back") continue;
+      }
       return;
     }
 
@@ -1863,6 +1910,26 @@ async function generateTrendScanFlow() {
       const content: GeneratedContent = { product, description };
       const result = await handlePostActions("description", content);
       if (result === "back") continue;
+      if (result === "regenerate") {
+        const newDesc = await generateWithRetry(
+          () =>
+            marketingWriter.generateDescription(
+              product,
+              scriptContext,
+              platform,
+            ),
+          (d) => validateDescription(d),
+        );
+        console.log(formatDescriptionOutput(newDesc));
+        const savedNewDesc = await savePostDescription(
+          newDesc,
+          trendProductId,
+          scriptDbId,
+        );
+        content.description = newDesc;
+        const nextResult = await handlePostActions("description", content);
+        if (nextResult === "back") continue;
+      }
       return;
     }
   }
