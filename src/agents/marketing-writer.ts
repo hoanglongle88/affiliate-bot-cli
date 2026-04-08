@@ -1,7 +1,6 @@
 import chalk from "chalk";
 import { ProductInfo, PostDescription, Platform } from "../types/content";
 import { callAI } from "../services/ai-orchestrator";
-import { savePostDescription } from "../data/storage";
 import {
   MARKETING_WRITER_SYSTEM_PROMPT,
   buildMarketingWriterUserPrompt,
@@ -12,10 +11,8 @@ export class MarketingWriterAgent {
     product: ProductInfo,
     scriptSummary: string,
     platform: Platform,
-    productId: string | null = null,
-    scriptId: string | null = null,
     targetAudience: string = "Người mua hàng online tại Việt Nam",
-  ): Promise<{ description: PostDescription; savedId: string }> {
+  ): Promise<PostDescription> {
     const input = {
       name: product.name,
       usp: product.usp || "Chất lượng vượt trội trong tầm giá",
@@ -43,12 +40,7 @@ export class MarketingWriterAgent {
     clearInterval(loadingInterval);
     process.stdout.write("\r" + " ".repeat(50) + "\r");
 
-    const description = this.parseResponse(response, platform);
-
-    // Self-save to storage
-    const saved = await savePostDescription(description, productId, scriptId);
-
-    return { description, savedId: saved.id };
+    return this.parseResponse(response, platform);
   }
 
   private parseResponse(text: string, platform: Platform): PostDescription {

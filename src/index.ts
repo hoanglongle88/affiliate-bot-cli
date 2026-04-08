@@ -38,6 +38,9 @@ import {
   deleteAllProducts,
   exportToTextFile,
   getVideoScripts,
+  saveVideoScript,
+  savePostDescription,
+  saveTrendBrief,
 } from "./data/storage";
 import { TTSService } from "./services/tts-service";
 import { getUsage, resetUsage } from "./services/usage-tracker";
@@ -478,15 +481,16 @@ async function generateScriptFlow() {
 
   const agent = new VideoCreatorAgent();
 
-  const { script, savedId: scriptDbId } = await generateWithRetry(
-    () => agent.generateScript(product, platform, productId),
-    (result) => validateScript(result.script),
+  const script = await generateWithRetry(
+    () => agent.generateScript(product, platform),
+    (s) => validateScript(s),
   );
 
   console.log(formatScriptOutput(script));
 
-  // History saved with reference to the script
-  await saveToHistoryWithRefs(productId, scriptDbId, null, "script");
+  // Save to DB after validation passes
+  const savedScript = await saveVideoScript(script, productId);
+  await saveToHistoryWithRefs(productId, savedScript.id, null, "script");
 
   const content: GeneratedContent = { product, script };
   const result = await handlePostActions("script", content);
@@ -523,13 +527,12 @@ async function generateDescriptionFlow() {
     console.log(chalk.yellow("\n🎬 AI đang tự tạo kịch bản video nhanh...\n"));
 
     const videoCreator = new VideoCreatorAgent();
-    const { script: autoScript, savedId } = await generateWithRetry(
-      () => videoCreator.generateScript(product, platform, productId),
-      (result) => validateScript(result.script),
+    const autoScript = await generateWithRetry(
+      () => videoCreator.generateScript(product, platform),
+      (s) => validateScript(s),
     );
 
     scriptContext = autoScript.body.substring(0, 200);
-    scriptDbId = savedId;
     console.log(
       chalk.green(
         "✅ Đã tạo kịch bản nhanh. Đang dùng làm ngữ cảnh cho caption...\n",
@@ -537,7 +540,10 @@ async function generateDescriptionFlow() {
     );
     console.log(chalk.gray(`   Tóm tắt: "${scriptContext}..."\n`));
 
-    await saveToHistoryWithRefs(productId, savedId, null, "script");
+    // Save script after validation
+    const savedScript = await saveVideoScript(autoScript, productId);
+    scriptDbId = savedScript.id;
+    await saveToHistoryWithRefs(productId, savedScript.id, null, "script");
   } else {
     // Selected từ DB hoặc manual input
     scriptContext = ctxResult.text;
@@ -552,22 +558,20 @@ async function generateDescriptionFlow() {
 
   const agent = new MarketingWriterAgent();
 
-  const { description, savedId: descDbId } = await generateWithRetry(
-    () =>
-      agent.generateDescription(
-        product,
-        scriptContext,
-        platform,
-        productId,
-        scriptDbId,
-      ),
-    (result) => validateDescription(result.description),
+  const description = await generateWithRetry(
+    () => agent.generateDescription(product, scriptContext, platform),
+    (d) => validateDescription(d),
   );
 
   console.log(formatDescriptionOutput(description));
 
-  // History saved with reference to the description
-  await saveToHistoryWithRefs(productId, null, descDbId, "description");
+  // Save to DB after validation passes
+  const savedDesc = await savePostDescription(
+    description,
+    productId,
+    scriptDbId,
+  );
+  await saveToHistoryWithRefs(productId, null, savedDesc.id, "description");
 
   const content: GeneratedContent = { product, description };
   const result = await handlePostActions("description", content);
@@ -632,7 +636,7 @@ async function generateImageBriefFlow() {
   };
 
   const agent = new ImageCreatorAgent();
-  const { brief, savedId } = await agent.generateBrief(input, productId);
+  const brief = await agent.generateBrief(input);
   agent.displayBrief(brief);
 
   while (true) {
@@ -981,15 +985,20 @@ async function generateTTSFromScript() {
       const plat = await selectPlatform();
 
       const agent = new VideoCreatorAgent();
-      const { script, savedId } = await generateWithRetry(
-        () => agent.generateScript(product, plat, productId),
-        (result) => validateScript(result.script),
+      const script = await generateWithRetry(
+        () => agent.generateScript(product, plat),
+        (s) => validateScript(s),
       );
 
       console.log(formatScriptOutput(script));
       scriptContent = script;
 
-      await saveToHistoryWithRefs(productId, savedId, null, "script");
+      await saveToHistoryWithRefs(
+        productId,
+        (await saveVideoScript(script, productId)).id,
+        null,
+        "script",
+      );
     } else {
       const entry = scriptsOnly.find((h: HistoryEntry) => h.id === source);
       if (!entry) return;
@@ -1001,15 +1010,20 @@ async function generateTTSFromScript() {
     const plat = await selectPlatform();
 
     const agent = new VideoCreatorAgent();
-    const { script, savedId } = await generateWithRetry(
-      () => agent.generateScript(product, plat, productId),
-      (result) => validateScript(result.script),
+    const script = await generateWithRetry(
+      () => agent.generateScript(product, plat),
+      (s) => validateScript(s),
     );
 
     console.log(formatScriptOutput(script));
     scriptContent = script;
 
-    await saveToHistoryWithRefs(productId, savedId, null, "script");
+    await saveToHistoryWithRefs(
+      productId,
+      (await saveVideoScript(script, productId)).id,
+      null,
+      "script",
+    );
   }
 
   if (!scriptContent) return;
@@ -1091,7 +1105,12 @@ async function generateTrendScanFlow() {
   }
 
   const scanner = new AutonomousTrendScanner();
-  const { brief, product, trendBriefId } = await scanner.scanAndGenerate(niche);
+  const { brief, product } = await scanner.scanAndGenerate(niche);
+
+  // Save product + trend brief to DB
+  const savedProduct = await saveProduct(product);
+  await saveTrendBrief(brief, savedProduct.id);
+  console.log(chalk.green(`\n💾 Đã lưu sản phẩm và trend brief!\n`));
 
   // Post-actions: hỏi user muốn làm gì tiếp
   while (true) {
@@ -1128,15 +1147,16 @@ async function generateTrendScanFlow() {
       const productId = foundProduct ? foundProduct.id : null;
 
       const videoCreator = new VideoCreatorAgent();
-      const { script, savedId: scriptDbId } = await generateWithRetry(
-        () => videoCreator.generateScript(product, platform, productId),
-        (result) => validateScript(result.script),
+      const script = await generateWithRetry(
+        () => videoCreator.generateScript(product, platform),
+        (s) => validateScript(s),
       );
 
       console.log(formatScriptOutput(script));
 
-      // Save history with references
-      await saveToHistoryWithRefs(productId, scriptDbId, null, "script");
+      // Save after validation
+      const savedScript = await saveVideoScript(script, productId);
+      await saveToHistoryWithRefs(productId, savedScript.id, null, "script");
 
       const content: GeneratedContent = { product, script };
       const result = await handlePostActions("script", content);
@@ -1164,13 +1184,12 @@ async function generateTrendScanFlow() {
         );
 
         const videoCreator = new VideoCreatorAgent();
-        const { script: autoScript, savedId } = await generateWithRetry(
-          () => videoCreator.generateScript(product, platform, trendProductId),
-          (result) => validateScript(result.script),
+        const autoScript = await generateWithRetry(
+          () => videoCreator.generateScript(product, platform),
+          (s) => validateScript(s),
         );
 
         scriptContext = autoScript.body.substring(0, 200);
-        scriptDbId = savedId;
         console.log(
           chalk.green(
             "✅ Đã tạo kịch bản nhanh. Đang dùng làm ngữ cảnh cho caption...\n",
@@ -1178,7 +1197,15 @@ async function generateTrendScanFlow() {
         );
         console.log(chalk.gray(`   Tóm tắt: "${scriptContext}..."\n`));
 
-        await saveToHistoryWithRefs(trendProductId, savedId, null, "script");
+        // Save script after validation
+        const savedScript = await saveVideoScript(autoScript, trendProductId);
+        scriptDbId = savedScript.id;
+        await saveToHistoryWithRefs(
+          trendProductId,
+          savedScript.id,
+          null,
+          "script",
+        );
       } else {
         scriptContext = ctxResult.text;
         scriptDbId = ctxResult.scriptId;
@@ -1193,25 +1220,24 @@ async function generateTrendScanFlow() {
       console.log(chalk.yellow("\n⚙️ Đang tạo mô tả bài đăng...\n"));
 
       const marketingWriter = new MarketingWriterAgent();
-      const { description, savedId: descDbId } = await generateWithRetry(
+      const description = await generateWithRetry(
         () =>
-          marketingWriter.generateDescription(
-            product,
-            scriptContext,
-            platform,
-            trendProductId,
-            scriptDbId,
-          ),
-        (result) => validateDescription(result.description),
+          marketingWriter.generateDescription(product, scriptContext, platform),
+        (d) => validateDescription(d),
       );
 
       console.log(formatDescriptionOutput(description));
 
-      // Save history with references
+      // Save after validation
+      const savedDesc = await savePostDescription(
+        description,
+        trendProductId,
+        scriptDbId,
+      );
       await saveToHistoryWithRefs(
         trendProductId,
         null,
-        descDbId,
+        savedDesc.id,
         "description",
       );
 

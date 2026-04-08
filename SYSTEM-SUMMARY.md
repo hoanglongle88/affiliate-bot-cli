@@ -74,33 +74,33 @@ Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, Yo
 
 ### 1. AutonomousTrendScanner (`agents/trend-scanner.ts`)
 
-- `scanAndGenerate(niche?)` → `{ brief, product, trendBriefId }`
+- `scanAndGenerate(niche?)` → `{ brief, product }`
 - Progress indicator: `⏳ Đang research trend... X.Xs`
-- Tự lưu product + trend brief vào DB
+- **KHÔNG tự lưu DB** — Orchestrator lưu product + trend brief
 - Chỉ research, KHÔNG gọi agents khác
 
 ### 2. VideoCreatorAgent (`agents/video-creator.ts`)
 
-- `generateScript(product, platform, productId?)` → `{ script, savedId }`
+- `generateScript(product, platform)` → `VideoScript`
 - Progress indicator: `⏳ Đang tạo kịch bản... X.Xs`
-- Tự lưu script vào DB (`video_scripts` table)
 - Parse JSON: hook, body, cta, script (merged), angle, platform_vibe, visual_cues
 - Title angle-based: "Đừng mua nếu chưa biết", "Giá không tưởng", v.v.
+- **KHÔNG tự lưu DB** — Orchestrator lưu sau khi validation pass
 
 ### 3. MarketingWriterAgent (`agents/marketing-writer.ts`)
 
-- `generateDescription(product, scriptSummary, platform, productId?, scriptId?, targetAudience?)` → `{ description, savedId }`
+- `generateDescription(product, scriptSummary, platform, targetAudience?)` → `PostDescription`
 - Progress indicator: `⏳ Đang tạo mô tả... X.Xs`
-- Tự lưu caption vào DB (`post_descriptions` table)
 - Auto-default hashtags theo nền tảng
 - Giữ emoji trong caption, chỉ remove hashtags
+- **KHÔNG tự lưu DB** — Orchestrator lưu sau khi validation pass
 
 ### 4. ImageCreatorAgent (`agents/image-creator.ts`)
 
-- `generateBrief(input, productId?)` → `{ brief, savedId }`
+- `generateBrief(input)` → `ImagePromptOutput`
 - Progress indicator: `⏳ Đang tạo brief ảnh... X.Xs`
-- Tự lưu brief vào DB (`image_briefs` table)
 - 3 prompts: safe, bold, lifestyle
+- **KHÔNG tự lưu DB** — Orchestrator lưu sau khi hiển thị
 
 ---
 
