@@ -6,7 +6,7 @@ Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, Yo
 
 ---
 
-## 🎯 7 Chức năng chính
+## 🎯 9 Chức năng chính
 
 ### 1. 🔍 Trend Researcher — Nghiên cứu xu hướng
 
@@ -14,6 +14,7 @@ Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, Yo
 
 - AI research web → tìm sản phẩm HOT theo niche
 - Tạo TrendBrief + lưu product + lưu trend brief vào DB
+- Scan mode: Tự động hoặc chọn niche cụ thể
 - Sau research: user chọn → Tạo script / Tạo description / Scan niche khác / Menu
 
 ### 2. 🎬 Video Creator — Kịch bản video đa nền tảng
@@ -22,7 +23,7 @@ Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, Yo
 
 - 5 nền tảng: TikTok, YouTube, FB Reels, IG Reels, FB Ads
 - AI tạo kịch bản conversion-focused (60s vàng)
-- Cấu trúc: Hook → Body (≥ 2 đoạn) → CTA
+- Cấu trúc: Hook (5-20 từ) → Body (≥ 2 đoạn) → CTA (3-15 từ)
 - Orchestrator lưu sau khi validation pass
 
 ### 3. ✍️ Marketing Writer — Caption theo nền tảng
@@ -41,7 +42,15 @@ Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, Yo
 - Chọn sản phẩm → nền tảng ads → tỷ lệ ảnh
 - AI tạo brief: format, visual style, color palette, 3 prompts (safe/bold/lifestyle)
 
-### 5. 🎤 TTS Voice — Google Text-to-Speech
+### 5. 🎬 Short Creator — Video Prompt cho AI Veo
+
+**Workflow:** `short_video`
+
+- Chọn sản phẩm → chọn script đã lưu
+- AI tạo Storyboard Timeline chi tiết với mốc thời gian
+- Output: timeline segments + video_prompt_full (1 shot cho Veo)
+
+### 6. 🎤 TTS Voice — Google Text-to-Speech
 
 **Workflow:** `tts`
 
@@ -49,44 +58,65 @@ Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, Yo
 - Google TTS Vietnamese → MP3
 - Lưu `/output/audio/`
 
-### 6. 📜 History — Quản lý nội dung
+### 7. 📜 History — Quản lý nội dung
 
-- Xem 50 entry gần nhất (tối đa 100 trong DB)
+- Xem theo sản phẩm → chi tiết nội dung
+- Content grouped by type: 🎬 Scripts, ✍️ Descriptions, 🎨 Image Briefs
+- Copy / Export / Regenerate / Back
 - History lưu reference IDs → content tables
-- Copy / Export / Xóa entry / Tạo lại
 
-### 7. 📦 Products — Quản lý sản phẩm
+### 8. 📦 Products — Quản lý sản phẩm
 
 - Xem sản phẩm đã lưu + usage count
 - 🗑️ Xóa toàn bộ sản phẩm (có xác nhận)
+- Delete từng sản phẩm
+
+### 9. 📥 Import CSV — Nhập sản phẩm hàng loạt
+
+- Tự động quét file .csv trong thư mục `data/`
+- Parse CSV: Tên sản phẩm, Giá, Doanh thu (sold)
+- Preview 10 sản phẩm trước khi import
+- Sản phẩm trùng tên → tự động update (upsert)
 
 ---
 
-## 🧩 4 AI Agents
+## 🧩 5 AI Agents
 
 ### 1. AutonomousTrendScanner (`agents/trend-scanner.ts`)
 
 - `scanAndGenerate(niche?)` → `{ brief, product }`
+- Progress indicator: `⏳ Đang research trend... X.Xs`
 - **KHÔNG tự lưu DB** — Orchestrator lưu product + trend brief
 - Chỉ research, KHÔNG gọi agents khác
 
 ### 2. VideoCreatorAgent (`agents/video-creator.ts`)
 
 - `generateScript(product, platform)` → `VideoScript`
+- Progress indicator: `⏳ Đang tạo kịch bản... X.Xs`
 - **KHÔNG tự lưu DB** — Orchestrator lưu sau khi validation pass
-- Parse JSON: angle, hook, body, cta, script, visual_cues
+- Parse JSON: angle, hook, body, cta, script, visual_cues[]
+- Auto-infer missing product data từ tên sản phẩm
 
 ### 3. MarketingWriterAgent (`agents/marketing-writer.ts`)
 
 - `generateDescription(product, scriptSummary, platform, targetAudience?)` → `PostDescription`
+- Progress indicator: `⏳ Đang tạo mô tả... X.Xs`
 - **KHÔNG tự lưu DB** — Orchestrator lưu sau khi validation pass
 - Parse JSON: headline, content, offer, cta, hashtags[]
 
 ### 4. ImageCreatorAgent (`agents/image-creator.ts`)
 
 - `generateBrief(input)` → `ImagePromptOutput`
+- Progress indicator: `⏳ Đang tạo brief ảnh... X.Xs`
 - **KHÔNG tự lưu DB** — Orchestrator lưu sau khi hiển thị
 - 3 prompts: safe, bold, lifestyle
+
+### 5. ShortCreatorAgent (`agents/short-creator.ts`)
+
+- `generatePromptFromScript(productName, videoScript)` → `ShortVideoPromptWithTimeline`
+- Progress indicator: `⏳ Đang tạo storyboard timeline... X.Xs`
+- **KHÔNG tự lưu DB** — Orchestrator lưu sau khi hiển thị
+- Output: totalDuration, visualStyle, timeline[], videoPromptFull
 
 ---
 
@@ -108,7 +138,8 @@ type Platform =
 ### Video Creator
 
 - **SYSTEM**: Đạo diễn sáng tạo + Conversion Copywriter. Cấu trúc 60s vàng.
-- **JSON Output**: `angle`, `hook` (5-20 từ), `body` (≥ 2 đoạn), `cta` (3-15 từ), `script` (lời thoại thuần), `visual_cues[]`
+- **JSON Output**: `angle`, `hook` (5-20 từ), `body` (≥ 2 đoạn), `cta` (3-15 từ), `script`, `visual_cues[]`
+- **Auto-infer**: Description/USP trống → AI tự suy luận từ tên sản phẩm
 
 ### Marketing Writer
 
@@ -126,6 +157,12 @@ type Platform =
 
 - **SYSTEM**: Art Director cho ads
 - **JSON Output**: adFormat, visualStyle, colorPalette, prompts (safe/bold/lifestyle), negativePrompt, shootingNotes
+
+### Short Creator
+
+- **SYSTEM**: Đạo diễn hình ảnh + Biên tập viên hậu kỳ
+- **JSON Output**: `total_duration`, `visual_style`, `timeline[]` (range, content, prompt), `video_prompt_full`
+- **Prompt Veo**: Tiếng Anh, tập trung vào motion, camera angle, transitions
 
 ---
 
@@ -173,29 +210,31 @@ type Platform =
 
 Nếu Supabase chưa được cấu hình trong `.env`, bot sẽ thoát với lỗi.
 
-### 6 Tables
+### 7 Tables
 
-| Table               | Mô tả                         |
-| ------------------- | ----------------------------- |
-| `products`          | Sản phẩm đã lưu               |
-| `video_scripts`     | Kịch bản video AI đã tạo      |
-| `post_descriptions` | Caption bài đăng AI đã tạo    |
-| `trend_briefs`      | Kết quả research trend        |
-| `image_briefs`      | Creative brief ảnh ads        |
-| `history`           | Lịch sử tạo content (ref IDs) |
+| Table                 | Mô tả                         |
+| --------------------- | ----------------------------- |
+| `products`            | Sản phẩm đã lưu               |
+| `video_scripts`       | Kịch bản video AI đã tạo      |
+| `post_descriptions`   | Caption bài đăng AI đã tạo    |
+| `trend_briefs`        | Kết quả research trend        |
+| `image_briefs`        | Creative brief ảnh ads        |
+| `short_video_prompts` | Storyboard timeline cho Veo   |
+| `history`             | Lịch sử tạo content (ref IDs) |
 
 ---
 
 ## 🛠️ Tính năng nổi bật
 
-- 🎨 **UI Cyberpunk** — Neon colors (#00f0ff cyan, #ff006e pink, #7b2ff7 purple), box headers, section dividers, quote blocks, numbered menu items
+- 🎨 **UI chuẩn UX** — Back/exit nhất quán, không double numbering, menu ngắn gọn
 - ✏️ Chỉnh sửa hook/body/CTA/caption trong editor
 - 💾 Copy clipboard / Export `.txt`
 - 🔄 Products lưu tự động, theo dõi usage count
 - 📋 Chọn script đã lưu làm context cho caption (4 nguồn: script product, all scripts, manual, AI-gen)
 - 📝 Orchestrator tự ghép caption từ components — tiết kiệm token, format chuẩn
-- ⏮️ Back navigation: Quay lại bước trước hoặc menu
-- 🗑️ Xóa toàn bộ products/history (có xác nhận)
+- 📥 Import CSV hàng loạt từ Shopee Affiliate
+- 🎬 Short Creator tạo Storyboard Timeline cho AI Veo
+- ⏮️ Back/Exit nhất quán ở TẤT CẢ features
 - ⏳ Progress indicator với elapsed time cho mọi AI call
 
 ---
