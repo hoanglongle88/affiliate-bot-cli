@@ -34,9 +34,12 @@ export interface VideoScript {
 
 export interface PostDescription {
   platform: Platform;
-  caption: string;
-  hashtags: string[];
-  cta: string;
+  headline: string; // Tiêu đề thu hút (viết hoa)
+  content: string; // Mô tả sản phẩm (30-500 ký tự)
+  offer: string; // Ưu đãi/sự khan hiếm
+  cta: string; // Link/vị trí mua hàng
+  hashtags: string[]; // Array tags KHÔNG có dấu # → Orchestrator tự thêm
+  caption: string; // Auto-built by Orchestrator (headline + content + offer + cta + hashtags)
   wordCount: number;
 }
 
@@ -105,9 +108,12 @@ export interface SavedPostDescription {
   productId: string | null;
   scriptId: string | null;
   platform: Platform;
-  caption: string;
-  hashtags: string[];
+  headline: string;
+  content: string;
+  offer: string;
   cta: string;
+  hashtags: string[];
+  caption: string;
   wordCount: number;
   createdAt: string;
 }

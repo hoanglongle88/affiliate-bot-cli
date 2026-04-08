@@ -295,15 +295,34 @@ export async function savePostDescription(
   productId: string | null,
   scriptId: string | null,
 ): Promise<SavedPostDescription> {
+  // Auto-build caption from components
+  const hashTags = description.hashtags.map((t) => `#${t}`).join(" ");
+  const caption = [
+    description.headline ? `🔥 ${description.headline}` : "",
+    "",
+    description.content,
+    "",
+    description.offer ? `⚡ ${description.offer}` : "",
+    "",
+    description.cta ? `👉 ${description.cta}` : "",
+    "",
+    hashTags,
+  ]
+    .filter((line) => line !== "")
+    .join("\n");
+
   const saved: SavedPostDescription = {
     id: generateId(),
     productId,
     scriptId,
     platform: description.platform,
-    caption: description.caption,
-    hashtags: description.hashtags,
+    headline: description.headline,
+    content: description.content,
+    offer: description.offer,
     cta: description.cta,
-    wordCount: description.wordCount,
+    hashtags: description.hashtags,
+    caption,
+    wordCount: description.wordCount || caption.split(/\s+/).length,
     createdAt: new Date().toISOString(),
   };
 
@@ -312,9 +331,12 @@ export async function savePostDescription(
     product_id: saved.productId,
     script_id: saved.scriptId,
     platform: saved.platform,
-    caption: saved.caption,
-    hashtags: saved.hashtags,
+    headline: saved.headline,
+    content: saved.content,
+    offer: saved.offer,
     cta: saved.cta,
+    hashtags: saved.hashtags,
+    caption: saved.caption,
     word_count: saved.wordCount,
     created_at: saved.createdAt,
   });
@@ -341,9 +363,12 @@ export async function getPostDescriptions(
     productId: d.product_id,
     scriptId: d.script_id,
     platform: d.platform,
-    caption: d.caption,
-    hashtags: d.hashtags,
+    headline: d.headline || "",
+    content: d.content || "",
+    offer: d.offer || "",
     cta: d.cta,
+    hashtags: d.hashtags,
+    caption: d.caption,
     wordCount: d.word_count,
     createdAt: d.created_at,
   }));
@@ -365,9 +390,12 @@ export async function getPostDescriptionById(
     productId: data.product_id,
     scriptId: data.script_id,
     platform: data.platform,
-    caption: data.caption,
-    hashtags: data.hashtags,
+    headline: data.headline || "",
+    content: data.content || "",
+    offer: data.offer || "",
     cta: data.cta,
+    hashtags: data.hashtags,
+    caption: data.caption,
     wordCount: data.word_count,
     createdAt: data.created_at,
   };
@@ -391,9 +419,12 @@ export async function getPostDescriptionsByProductId(
     productId: d.product_id,
     scriptId: d.script_id,
     platform: d.platform,
-    caption: d.caption,
-    hashtags: d.hashtags,
+    headline: d.headline || "",
+    content: d.content || "",
+    offer: d.offer || "",
     cta: d.cta,
+    hashtags: d.hashtags,
+    caption: d.caption,
     wordCount: d.word_count,
     createdAt: d.created_at,
   }));

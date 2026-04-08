@@ -48,9 +48,10 @@ export class VideoCreatorAgent {
     try {
       const data = JSON.parse(cleaned);
 
-      // AI returns: { platform_vibe, angle, target_persona, hook, body, cta, visual_cues, script }
+      // AI returns: { angle, hook, body, cta, script, visual_cues[] }
+      // Use pre-merged script from AI, or build from parts
       const mergedScript =
-        data.script || `${data.hook} ${data.body} ${data.cta}`;
+        data.script || `${data.hook}\n\n${data.body}\n\n${data.cta}`;
       const wordCount = data.wordCount || mergedScript.split(/\s+/).length;
 
       const titleAngle =
@@ -66,7 +67,7 @@ export class VideoCreatorAgent {
         platform,
         title: `${titleAngle}: ${productName}`,
         hook: data.hook || "",
-        body: mergedScript,
+        body: data.body || "",
         voiceoverCTA: data.cta || "",
         wordCount,
         estimatedDuration: `${Math.round(wordCount / 2.5)} giây`,

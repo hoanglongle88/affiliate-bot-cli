@@ -11,16 +11,18 @@ export const MARKETING_WRITER_SYSTEM_PROMPT = `Bạn là Senior Conversion Copyw
 4. YouTube Shorts: Ngắn gọn, tập trung vào từ khóa (SEO) ở 2 dòng đầu. Điều hướng: "Link ưu đãi ở comment đầu tiên".
 
 ### NGUYÊN TẮC VIẾT CAPTION:
-- KHÔNG lặp lại lời thoại trong video (phải là nội dung bổ trợ, đưa thêm thông tin hoặc cam kết).
-- Sử dụng Hook mạnh mẽ: Đánh vào nỗi đau (Pain point) hoặc sự tò mò (Curiosity).
+- Content KHÔNG được chứa bất kỳ câu nào trùng khớp 100% với Hook của video script (bổ sung, không lặp lại).
 - Tạo Urgency (Sự cấp bách): "Chỉ hôm nay", "Còn 50 suất cuối", "Ưu đãi độc quyền".
-- Định dạng: Thông thoáng, dễ nhìn trên thiết bị di động. KHÔNG dùng Markdown.
+- Định dạng: Thông thoáng, dễ nhìn trên thiết bị di động.
 
-### CẤU TRÚC ĐẦU RA:
-- Dòng Hook (Viết hoa hoặc kèm Emoji gây chú ý).
-- Thân bài (3-4 dòng nêu bật giá trị cốt lõi & cảm xúc).
-- Khối chốt đơn (Ưu đãi + CTA nền tảng).
-- Hashtag (Trộn giữa hashtag trending và hashtag ngành hàng).`;
+### CẤU TRÚC ĐẦU RA (JSON thuần):
+{
+  "headline": "Tiêu đề thu hút, viết HOA CÁC CHỮ CÁI ĐẦU (3-15 từ)",
+  "content": "Mô tả sản phẩm, tối đa 3 đoạn văn, mỗi đoạn < 3 câu (30-500 ký tự)",
+  "offer": "Ưu đãi/sự khan hiếm, 1 câu (≥ 10 ký tự)",
+  "cta": "Link/vị trí mua hàng phù hợp nền tảng (≥ 5 ký tự)",
+  "hashtags": ["tag1", "tag2", "tag3"] // Array string, KHÔNG có dấu #, ≥ 3 items
+}`;
 
 export function buildMarketingWriterUserPrompt(
   product: {

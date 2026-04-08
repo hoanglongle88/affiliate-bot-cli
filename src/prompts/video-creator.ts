@@ -10,26 +10,24 @@ QUY TRÌNH TƯ DUY (Internal Monologue):
 3. Chốt hạ bằng Proof: Sử dụng dữ liệu lượt bán/đánh giá để đập tan sự hoài nghi.
 
 CẤU TRÚC KỊCH BẢN (Tối ưu theo khung 60s vàng):
-- [HOOK] (0-3s): Chặn đứng hành vi lướt bằng câu hỏi xoáy vào nỗi đau hoặc tuyên bố gây sốc.
-- [PROBLEM & AGITATION] (3-15s): Mô tả vấn đề một cách thực tế để khách hàng thấy mình trong đó.
-- [SOLUTION & PROOF] (15-45s): Sản phẩm xuất hiện như "vị cứu tinh". Lồng ghép khéo léo doanh số/đánh giá sao.
-- [CTA & URGENCY] (45-60s): Lời kêu gọi hành động cụ thể + Giới hạn (deal hời/số lượng).
+- [HOOK] (5-20 từ): Chặn đứng hành vi lướt bằng câu hỏi xoáy vào nỗi đau hoặc tuyên bố gây sốc.
+- [BODY] (≥ 2 đoạn, tách bằng xuống dòng): Dẫn dắt từ Vấn đề -> Giải pháp -> Proof. Mỗi đoạn là một nhịp nghỉ tự nhiên để đọc voiceover.
+- [CTA] (3-15 từ): Lời kêu gọi hành động ngắn gọn, dứt khoát.
 
 QUY TẮC NGÔN NGỮ:
 - Viết bằng tiếng Việt tự nhiên, gãy gọn, nhịp điệu nhanh.
-- Sử dụng từ ngữ có tính kích thích thị giác và cảm xúc (ví dụ: bùng nổ, cháy hàng, dứt điểm, cực phẩm).
+- Script (lời thoại) CHỈ chứa văn bản để đọc — KHÔNG chứa mô tả cảnh quay, emoji, hay ký tự đặc biệt.
+- Body PHẢI được chia thành ít nhất 2 đoạn bằng dấu xuống dòng (\\n).
 - KHÔNG dùng markdown.
 
 Output BẮT BUỘC là JSON thuần:
 {
-  "platform_vibe": "Mô tả phong cách video phù hợp nền tảng (vd: Cinematic/Vlog/Review)",
-  "angle": "pain-point|curiosity|social-proof|price-shock",
-  "target_persona": "Mô tả ngắn gọn đối tượng mục tiêu",
-  "hook": "Câu mở đầu chặn lướt",
-  "body": "Nội dung dẫn dắt (Vấn đề -> Giải pháp -> Proof)",
-  "cta": "Lời kêu gọi hành động phù hợp nền tảng",
-  "visual_cues": "Gợi ý 3-4 cảnh quay chính (vd: POV quay từ trên xuống, quay cận cảnh texture)",
-  "script": "Toàn bộ lời thoại liền mạch để đọc"
+  "angle": "pain-point | curiosity | social-proof | price-shock",
+  "hook": "Câu mở đầu chặn lướt (5-20 từ)",
+  "body": "Nội dung dẫn dắt, chia thành 3-4 đoạn nhỏ bằng dấu xuống dòng (\\n)",
+  "cta": "Lời kêu gọi hành động (3-15 từ)",
+  "script": "Gộp hook + body + cta thành một văn bản đọc liền mạch (chỉ lời thoại, không mô tả cảnh)",
+  "visual_cues": ["Cảnh 1", "Cảnh 2", "Cảnh 3"]
 }`;
 
 export function buildVideoCreatorUserPrompt(

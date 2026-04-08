@@ -44,54 +44,77 @@ export class MarketingWriterAgent {
   }
 
   private parseResponse(text: string, platform: Platform): PostDescription {
-    const hashtagRegex = /#[\wÀ-ỹ]+/g;
-    const hashtags = text.match(hashtagRegex) || [];
+    let cleaned = text
+      .replace(/```json\s*/g, "")
+      .replace(/```\s*/g, "")
+      .trim();
 
-    const sentences = text.split(/[.!?\n]/).filter((s) => s.trim().length > 0);
-    const ctaKeywords = [
-      "mua",
-      "giỏ hàng",
-      "link",
-      "nhấn",
-      "click",
-      "đặt hàng",
-      "inbox",
-      "ghé",
-      "comment",
-      "bio",
-    ];
-    const cta =
-      [...sentences]
-        .reverse()
-        .find((s) => ctaKeywords.some((kw) => s.toLowerCase().includes(kw)))
-        ?.trim() || "";
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) cleaned = jsonMatch[0];
 
-    const caption = text.replace(hashtagRegex, "").trim();
+    try {
+      const data = JSON.parse(cleaned);
 
-    const defaultTags: Record<string, string[]> = {
-      tiktok: ["#fyp", "#xuhuong", "#tiktokshop"],
-      youtube: ["#shorts", "#review", "#xuhuong"],
-      facebook_reels: ["#reels", "#fyp", "#review"],
-      instagram_reels: ["#reels", "#instashop", "#review"],
-      facebook_ads: ["#ads", "#sale", "#freeship"],
-    };
+      // AI returns: { headline, content, offer, cta, hashtags[] }
+      // Hashtags: strip leading # from each tag (orchestrator will re-add)
+      let rawTags: string[] = Array.isArray(data.hashtags) ? data.hashtags : [];
+      const hashtags = rawTags
+        .map((t) => t.replace(/^#+/, "").trim())
+        .filter(Boolean);
 
-    const platformDefaults = defaultTags[platform] || [
-      "#fyp",
-      "#xuhuong",
-      "#review",
-    ];
-    const finalTags =
-      hashtags.length >= 3
-        ? hashtags.slice(0, 7)
-        : [...new Set([...hashtags, ...platformDefaults])].slice(0, 7);
+      // Ensure minimum hashtags
+      const defaultTags: Record<string, string[]> = {
+        tiktok: ["fyp", "xuhuong", "tiktokshop"],
+        youtube: ["shorts", "review", "xuhuong"],
+        facebook_reels: ["reels", "fyp", "review"],
+        instagram_reels: ["reels", "instashop", "review"],
+        facebook_ads: ["ads", "sale", "freeship"],
+      };
+      const platformDefaults = defaultTags[platform] || [
+        "fyp",
+        "xuhuong",
+        "review",
+      ];
+      const finalTags =
+        hashtags.length >= 3
+          ? hashtags.slice(0, 7)
+          : [...new Set([...hashtags, ...platformDefaults])].slice(0, 7);
 
-    return {
-      platform,
-      caption,
-      hashtags: finalTags,
-      cta,
-      wordCount: text.split(/\s+/).length,
-    };
+      // Orchestrator will build caption: headline + content + offer + cta + hashtags
+      // For now, return components — caption is placeholder
+      return {
+        platform,
+        headline: data.headline || "",
+        content: data.content || "",
+        offer: data.offer || "",
+        cta: data.cta || "",
+        hashtags: finalTags,
+        caption: "", // Auto-built by savePostDescription
+        wordCount: (data.content || text).split(/\s+/).length,
+      };
+    } catch {
+      console.log(
+        chalk.yellow("⚠️  Không parse được JSON, dùng fallback parsing\n"),
+      );
+
+      // Fallback: extract hashtags and treat rest as content
+      const hashtagRegex = /#[\wÀ-ỹ]+/g;
+      const hashtags = text.match(hashtagRegex) || [];
+      const content = text.replace(hashtagRegex, "").trim();
+
+      return {
+        platform,
+        headline: "REVIEW SẢN PHẨM",
+        content: content.substring(0, 500),
+        offer: "Ưu đãi có hạn — Mua ngay kẻo lỡ!",
+        cta: "Bấm vào link để mua ngay",
+        hashtags:
+          hashtags.length >= 3
+            ? hashtags.map((t) => t.replace(/^#+/, "")).slice(0, 7)
+            : ["fyp", "xuhuong", "review"],
+        caption: "",
+        wordCount: text.split(/\s+/).length,
+      };
+    }
   }
 }

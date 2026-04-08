@@ -41,23 +41,60 @@ export function formatScriptOutput(script: VideoScript): string {
 }
 
 export function formatDescriptionOutput(desc: PostDescription): string {
-  const platformLabel =
-    desc.platform === "tiktok" ? "📱 TIKTOK" : "▶️ YOUTUBE SHORTS";
+  const platformLabels: Record<string, string> = {
+    tiktok: "📱 TIKTOK",
+    youtube: "▶️ YOUTUBE SHORTS",
+    facebook_reels: "📘 FACEBOOK REELS",
+    instagram_reels: "📸 INSTAGRAM REELS",
+    facebook_ads: "📢 FACEBOOK ADS",
+  };
+  const platformLabel = platformLabels[desc.platform] || "📝 POST";
 
   let output = "";
 
   output += chalk.bold.cyan(`\n${platformLabel} POST DESCRIPTION\n`);
   output += chalk.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n");
 
-  output +=
-    chalk.bold.yellow("📝 Caption:\n") +
-    chalk.white(`  ${desc.caption}`) +
-    "\n\n";
+  if (desc.headline) {
+    output +=
+      chalk.bold.yellow("🔥 Headline:\n") +
+      chalk.white(`  ${desc.headline}`) +
+      "\n\n";
+  }
 
+  if (desc.content) {
+    output +=
+      chalk.bold.green("📝 Content:\n") +
+      chalk.white(`  ${desc.content}`) +
+      "\n\n";
+  }
+
+  if (desc.offer) {
+    output +=
+      chalk.bold.magenta("⚡ Offer:\n") +
+      chalk.white(`  ${desc.offer}`) +
+      "\n\n";
+  }
+
+  if (desc.cta) {
+    output +=
+      chalk.bold.blue("👉 CTA:\n") + chalk.yellow(`  ${desc.cta}`) + "\n\n";
+  }
+
+  // Display final caption
+  if (desc.caption) {
+    output += chalk.bold.cyan("📋 Caption hoàn chỉnh (sẵn đăng):\n");
+    output += chalk.gray("  ──────────────────────────────────\n");
+    desc.caption.split("\n").forEach((line) => {
+      output += chalk.gray("  ") + chalk.white(line) + "\n";
+    });
+    output += chalk.gray("  ──────────────────────────────────\n\n");
+  }
+
+  // Hashtags with #
+  const hashTags = desc.hashtags.map((t) => `#${t}`).join(" ");
   output +=
-    chalk.bold.cyan("🏷️ Hashtags:\n") +
-    chalk.cyan(`  ${desc.hashtags.join(" ")}`) +
-    "\n\n";
+    chalk.bold.cyan("🏷️ Hashtags:\n") + chalk.cyan(`  ${hashTags}`) + "\n\n";
 
   output += chalk.gray(`📊 Độ dài: ~${desc.wordCount} từ\n`);
 
