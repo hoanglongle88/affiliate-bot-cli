@@ -24,6 +24,7 @@ import {
 } from "../lib/api";
 import type { Product } from "../interfaces";
 import ErrorBoundary from "../components/ErrorBoundary";
+import Tooltip from "../components/Tooltip";
 import toast from "react-hot-toast";
 
 function ProductsContent() {
@@ -246,8 +247,6 @@ function ProductsContent() {
     "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent-cyan)] text-[var(--bg-primary)] font-medium hover:opacity-90 text-sm disabled:opacity-50";
   const btnSecondary =
     "px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] text-sm hover:bg-[var(--bg-card)]";
-  const btnDanger =
-    "p-2 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300";
 
   const SORT_OPTIONS = [
     { value: "date_desc", label: "Mới nhất" },
@@ -270,32 +269,45 @@ function ProductsContent() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => load(search, page, sort)}
-              className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:bg-[var(--bg-secondary)]"
-              title="Làm mới"
-            >
-              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-            </button>
-            <button
-              onClick={handleExport}
-              className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:bg-[var(--bg-secondary)]"
-              title="Xuất CSV"
-            >
-              <Download size={18} />
-            </button>
-            <button
-              onClick={handleImportClick}
-              disabled={importing}
-              className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
-              title="Nhập CSV"
-            >
-              {importing ? (
-                <span className="animate-spin">⏳</span>
-              ) : (
-                <Upload size={18} />
-              )}
-            </button>
+            <Tooltip content="Làm mới">
+              <button
+                onClick={() => load(search, page, sort)}
+                className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:bg-[var(--bg-secondary)]"
+              >
+                <RefreshCw
+                  size={18}
+                  className={loading ? "animate-spin" : ""}
+                />
+              </button>
+            </Tooltip>
+            <Tooltip content="Xuất CSV">
+              <button
+                onClick={handleExport}
+                className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:bg-[var(--bg-secondary)]"
+              >
+                <Download size={18} />
+              </button>
+            </Tooltip>
+            <Tooltip content="Nhập CSV">
+              <button
+                onClick={handleImportClick}
+                disabled={importing}
+                className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
+              >
+                {importing ? (
+                  <span className="animate-spin">⏳</span>
+                ) : (
+                  <Upload size={18} />
+                )}
+              </button>
+            </Tooltip>
+            <Tooltip content="Thêm sản phẩm">
+              <button onClick={() => setShowForm(true)} className={btnPrimary}>
+                <Plus size={18} />{" "}
+                <span className="hidden sm:inline">Thêm sản phẩm</span>
+                <span className="sm:hidden">Thêm</span>
+              </button>
+            </Tooltip>
             <input
               ref={fileInputRef}
               type="file"
@@ -303,50 +315,51 @@ function ProductsContent() {
               onChange={handleImportFile}
               className="hidden"
             />
-            <button onClick={() => setShowForm(true)} className={btnPrimary}>
-              <Plus size={18} />{" "}
-              <span className="hidden sm:inline">Thêm sản phẩm</span>
-              <span className="sm:hidden">Thêm</span>
-            </button>
           </div>
         </div>
 
         {/* Search + Sort bar */}
         <div className="mt-4 flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search
-              size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"
-            />
-            <input
-              className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg pl-10 pr-10 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-cyan)]"
-              placeholder="Tìm kiếm theo tên, mô tả, giá..."
-              value={search}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
-            {search && (
-              <button
-                onClick={() => {
-                  setSearch("");
-                  load("", 1, sort);
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              >
-                <X size={16} />
-              </button>
-            )}
+            <Tooltip content="Tìm kiếm theo tên, mô tả, giá" position="right">
+              <div className="relative">
+                <Search
+                  size={18}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"
+                />
+                <input
+                  className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg pl-10 pr-10 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-cyan)]"
+                  placeholder="Tìm kiếm theo tên, mô tả, giá..."
+                  value={search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                />
+                {search && (
+                  <button
+                    onClick={() => {
+                      setSearch("");
+                      load("", 1, sort);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+            </Tooltip>
           </div>
-          <select
-            className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-cyan)]"
-            value={sort}
-            onChange={(e) => handleSort(e.target.value)}
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <Tooltip content="Sắp xếp" position="left">
+            <select
+              className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-cyan)]"
+              value={sort}
+              onChange={(e) => handleSort(e.target.value)}
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </Tooltip>
         </div>
       </div>
 
@@ -430,20 +443,22 @@ function ProductsContent() {
                       <td className="px-6 py-4">{p.usageCount || 0} lần</td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => handleEdit(p)}
-                            className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] hover:bg-[var(--bg-card)]"
-                            title="Chỉnh sửa"
-                          >
-                            <Edit2 size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(p.id)}
-                            className={btnDanger}
-                            title="Xóa"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          <Tooltip content="Chỉnh sửa" position="left">
+                            <button
+                              onClick={() => handleEdit(p)}
+                              className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] hover:bg-[var(--bg-card)]"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                          </Tooltip>
+                          <Tooltip content="Xóa" position="left">
+                            <button
+                              onClick={() => handleDelete(p.id)}
+                              className="p-2 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </Tooltip>
                         </div>
                       </td>
                     </tr>
@@ -467,18 +482,22 @@ function ProductsContent() {
                       </p>
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      <button
-                        onClick={() => handleEdit(p)}
-                        className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent-cyan)]"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p.id)}
-                        className="p-2 rounded-lg text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <Tooltip content="Chỉnh sửa" position="left">
+                        <button
+                          onClick={() => handleEdit(p)}
+                          className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent-cyan)]"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Xóa" position="left">
+                        <button
+                          onClick={() => handleDelete(p.id)}
+                          className="p-2 rounded-lg text-red-400 hover:text-red-300"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </Tooltip>
                     </div>
                   </div>
                 </div>
