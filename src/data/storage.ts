@@ -1015,8 +1015,30 @@ export function exportImageBrief(
   adPlatform: string,
   aspectRatio: string,
 ): string {
-  const filepath = getExportFilePath(productName);
+  const baseFilepath = getExportFilePath(productName);
   const imageBriefText = buildImageBriefSection(brief, adPlatform, aspectRatio);
+
+  // Try to find existing export file for this product (check both new and old formats)
+  let filepath = baseFilepath;
+  if (fs.existsSync(baseFilepath)) {
+    filepath = baseFilepath;
+  } else {
+    // Check for timestamped files matching this product name
+    if (fs.existsSync(EXPORTS_DIR)) {
+      const files = fs.readdirSync(EXPORTS_DIR);
+      const safeBase = productName
+        .replace(/[\/\\?%*:|"<>]/g, "-")
+        .replace(/\s+/g, "_")
+        .toLowerCase()
+        .substring(0, 60);
+      const match = files.find(
+        (f) => f.startsWith(safeBase) && f.endsWith(".txt"),
+      );
+      if (match) {
+        filepath = path.join(EXPORTS_DIR, match);
+      }
+    }
+  }
 
   // If file exists, update it
   if (fs.existsSync(filepath)) {
@@ -1096,8 +1118,8 @@ export function exportImageBrief(
   lines.push("");
   lines.push("═".repeat(50));
 
-  fs.writeFileSync(filepath, lines.join("\n"), "utf-8");
-  return filepath;
+  fs.writeFileSync(baseFilepath, lines.join("\n"), "utf-8");
+  return baseFilepath;
 }
 
 /**
@@ -1114,7 +1136,29 @@ export function appendPostDescription(
     wordCount: number;
   },
 ): string {
-  const filepath = getExportFilePath(productName);
+  const baseFilepath = getExportFilePath(productName);
+
+  // Try to find existing export file (check both new and old timestamped formats)
+  let filepath = baseFilepath;
+  if (fs.existsSync(baseFilepath)) {
+    filepath = baseFilepath;
+  } else {
+    // Check for timestamped files matching this product name
+    if (fs.existsSync(EXPORTS_DIR)) {
+      const files = fs.readdirSync(EXPORTS_DIR);
+      const safeBase = productName
+        .replace(/[\/\\?%*:|"<>]/g, "-")
+        .replace(/\s+/g, "_")
+        .toLowerCase()
+        .substring(0, 60);
+      const match = files.find(
+        (f) => f.startsWith(safeBase) && f.endsWith(".txt"),
+      );
+      if (match) {
+        filepath = path.join(EXPORTS_DIR, match);
+      }
+    }
+  }
 
   // If file doesn't exist, create it with post description only
   if (!fs.existsSync(filepath)) {
