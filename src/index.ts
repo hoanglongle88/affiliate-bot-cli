@@ -28,7 +28,7 @@ import {
 import { validateScript, validateDescription } from "./utils/validator";
 import {
   saveProduct,
-  getProducts,
+  getAllProducts,
   saveToHistory,
   saveToHistoryWithRefs,
   getHistory,
@@ -93,7 +93,7 @@ async function askBackOrMenu(): Promise<boolean> {
 async function selectOrEnterProduct(
   showAll: boolean = false,
 ): Promise<{ product: ProductInfo; productId: string | null }> {
-  const products = await getProducts();
+  const products = await getAllProducts();
 
   if (products.length === 0) {
     console.log(chalk.yellow("\n📭 Chưa có sản phẩm nào trong database.\n"));
@@ -122,7 +122,7 @@ async function selectOrEnterProduct(
     }
 
     const newProduct = await enterProduct();
-    const allProducts = await getProducts();
+    const allProducts = await getAllProducts();
     const found = allProducts.find((p) => p.name === newProduct.name);
     return { product: newProduct, productId: found ? found.id : null };
   }
@@ -174,7 +174,7 @@ async function selectOrEnterProduct(
 
   if (action === "new") {
     const newProduct = await enterProduct();
-    const allProducts = await getProducts();
+    const allProducts = await getAllProducts();
     const found = allProducts.find((p) => p.name === newProduct.name);
     return { product: newProduct, productId: found ? found.id : null };
   }
@@ -197,7 +197,7 @@ async function selectOrEnterProduct(
   }
 
   const newProduct = await enterProduct();
-  const allProducts = await getProducts();
+  const allProducts = await getAllProducts();
   const found = allProducts.find((p) => p.name === newProduct.name);
   return { product: newProduct, productId: found ? found.id : null };
 }
@@ -363,8 +363,8 @@ async function selectScriptContext(
 
   // Option 1: Scripts of current product
   if (contextSource === "this-product" && productId) {
-    const scripts = await getVideoScripts(50);
-    const productScripts = scripts.filter((s) => s.productId === productId);
+    const { scripts: allScripts } = await getVideoScripts(50, 0);
+    const productScripts = allScripts.filter((s) => s.productId === productId);
 
     if (productScripts.length === 0) {
       console.log(chalk.yellow("\n📭 Chưa có script nào cho sản phẩm này.\n"));
@@ -376,7 +376,7 @@ async function selectScriptContext(
 
   // Option 2: All scripts
   if (contextSource === "all-script") {
-    const scripts = await getVideoScripts(50);
+    const { scripts } = await getVideoScripts(50);
 
     if (scripts.length === 0) {
       console.log(chalk.yellow("\n📭 Chưa có script nào được lưu.\n"));
@@ -1115,7 +1115,7 @@ async function viewHistory() {
   );
 
   // Step 1: Show products with content count
-  const products = await getProducts();
+  const products = await getAllProducts();
 
   if (products.length === 0) {
     console.log(chalk.yellow("\n📭 Chưa có sản phẩm nào.\n"));
@@ -1471,7 +1471,7 @@ async function manageProducts() {
     chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
   );
 
-  const products = await getProducts();
+  const products = await getAllProducts();
 
   if (products.length === 0) {
     console.log(chalk.yellow("\n📦 Chưa có sản phẩm nào được lưu.\n"));
@@ -1809,7 +1809,7 @@ async function generateTrendScanFlow() {
       );
 
       // Get product ID
-      const allProducts = await getProducts();
+      const allProducts = await getAllProducts();
       const foundProduct = allProducts.find((p) => p.name === product.name);
       const productId = foundProduct ? foundProduct.id : null;
 
@@ -1846,7 +1846,7 @@ async function generateTrendScanFlow() {
       const platform = await selectPlatform();
 
       // Get product ID first
-      const allProducts = await getProducts();
+      const allProducts = await getAllProducts();
       const foundProduct = allProducts.find((p) => p.name === product.name);
       const trendProductId = foundProduct ? foundProduct.id : null;
 

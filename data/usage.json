@@ -1,12 +1,12 @@
 {
-  "totalCalls": 15,
+  "totalCalls": 22,
   "byProvider": {
-    "ollama": 0,
+    "ollama": 7,
     "gemini": 15
   },
   "byFeature": {
-    "trend_research": 0,
-    "video_script": 4,
+    "trend_research": 1,
+    "video_script": 10,
     "marketing_caption": 5,
     "image_brief": 4,
     "short_video_prompt": 2

@@ -14,6 +14,7 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import fs from "fs";
 import scriptsRouter from "./api/routes/scripts";
@@ -27,9 +28,30 @@ import statsRouter from "./api/routes/stats";
 
 const app = express();
 
+// ── Rate Limiting ──
+
+// General API: 100 req/5min
+const generalLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 100,
+  message: { error: "Quá nhiều yêu cầu. Vui lòng đợi 5 phút." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// AI-heavy endpoints: 10 req/5min (tốn API credits)
+const aiLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 10,
+  message: { error: "Bạn đã đạt giới hạn AI. Vui lòng đợi 5 phút." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(generalLimiter); // Apply global rate limit
 
 // Health check
 app.get("/api/health", (_req, res) => {
@@ -41,13 +63,13 @@ app.get("/api/health", (_req, res) => {
 });
 
 // API Routes
-app.use("/api/scripts", scriptsRouter);
-app.use("/api/captions", captionsRouter);
-app.use("/api/products", productsRouter);
-app.use("/api/trends", trendsRouter);
+app.use("/api/scripts", aiLimiter, scriptsRouter); // AI endpoints — strict limit
+app.use("/api/captions", aiLimiter, captionsRouter); // AI endpoints
+app.use("/api/products", productsRouter); // Products — route-level limiters applied
+app.use("/api/trends", aiLimiter, trendsRouter); // AI endpoints
 app.use("/api/history", historyRouter);
-app.use("/api/short", shortRouter);
-app.use("/api/image", imageRouter);
+app.use("/api/short", aiLimiter, shortRouter); // AI endpoints
+app.use("/api/image", aiLimiter, imageRouter); // AI endpoints
 app.use("/api/stats", statsRouter);
 
 // Serve web dashboard in production

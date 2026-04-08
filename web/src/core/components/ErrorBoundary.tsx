@@ -1,5 +1,5 @@
-import { Component, type ReactNode } from "react";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { Component, type ReactNode } from 'react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -22,7 +22,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("[ErrorBoundary]", error, info);
+    console.error('[ErrorBoundary]', error, info);
   }
 
   handleRetry = () => {
@@ -35,16 +35,16 @@ export default class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) return this.props.fallback;
 
       return (
-        <div className="flex flex-col items-center justify-center min-h-[300px] p-8">
-          <div className="bg-[var(--bg-card)] rounded-xl p-6 sm:p-8 border border-red-500/30 max-w-md text-center">
-            <AlertTriangle className="text-red-400 mx-auto mb-4" size={48} />
-            <h3 className="text-lg font-semibold mb-2">Đã xảy ra lỗi</h3>
-            <p className="text-sm text-[var(--text-secondary)] mb-4">
-              {this.state.error?.message || "Không thể tải nội dung"}
+        <div className="flex min-h-[300px] flex-col items-center justify-center p-8">
+          <div className="max-w-md rounded-xl border border-red-500/30 bg-[var(--bg-card)] p-6 text-center sm:p-8">
+            <AlertTriangle className="mx-auto mb-4 text-red-400" size={48} />
+            <h3 className="mb-2 text-lg font-semibold">Đã xảy ra lỗi</h3>
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
+              {this.state.error?.message || 'Không thể tải nội dung'}
             </p>
             <button
               onClick={this.handleRetry}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent-cyan)] text-[var(--bg-primary)] font-medium text-sm"
+              className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-cyan)] px-4 py-2 text-sm font-medium text-[var(--bg-primary)]"
             >
               <RefreshCw size={16} />
               Thử lại

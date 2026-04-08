@@ -1,38 +1,23 @@
-import { useState, useEffect } from "react";
-import { Copy, Check, Film } from "lucide-react";
-import { getProducts, createShortVideo } from "../lib/api";
+import { useState, useEffect } from 'react';
+import { Copy, Check, Film } from 'lucide-react';
+import { getProducts, createShortVideo } from '../core/services';
 import type {
   Product,
   ShortVideoResult,
   ShortVideoTimelineSegment,
   Platform,
-} from "../interfaces";
-
-const PLATFORMS = [
-  "tiktok",
-  "youtube",
-  "facebook_reels",
-  "instagram_reels",
-  "facebook_ads",
-] as const;
-
-const PLATFORM_LABELS: Record<string, string> = {
-  tiktok: "TikTok",
-  youtube: "YouTube Shorts",
-  facebook_reels: "Facebook Reels",
-  instagram_reels: "Instagram Reels",
-  facebook_ads: "Facebook Ads",
-};
+} from '../core/interfaces';
+import { PLATFORM_LABELS, PLATFORMS } from '../core/constants';
 
 export default function ShortCreator() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState("");
-  const [selectedProductName, setSelectedProductName] = useState("");
-  const [platform, setPlatform] = useState<Platform>("tiktok");
-  const [hook, setHook] = useState("");
-  const [body, setBody] = useState("");
-  const [cta, setCta] = useState("");
-  const [estimatedDuration, setEstimatedDuration] = useState("30 giây");
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedProductName, setSelectedProductName] = useState('');
+  const [platform, setPlatform] = useState<Platform>('tiktok');
+  const [hook, setHook] = useState('');
+  const [body, setBody] = useState('');
+  const [cta, setCta] = useState('');
+  const [estimatedDuration, setEstimatedDuration] = useState('30 giây');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ShortVideoResult | null>(null);
   const [copied, setCopied] = useState(false);
@@ -57,14 +42,14 @@ export default function ShortCreator() {
 
     try {
       const data = await createShortVideo({
-        productName: selectedProductName || "Sản phẩm",
+        productName: selectedProductName || 'Sản phẩm',
         script: { platform, hook, body, voiceoverCTA: cta, estimatedDuration },
         productId: selectedProductId || null,
       });
       if (data.prompt) setResult(data.prompt);
-      else alert(data.error || "Không thể tạo video prompt");
+      else alert(data.error || 'Không thể tạo video prompt');
     } catch {
-      alert("API chưa chạy. Khởi động bằng: npm run server");
+      alert('API chưa chạy. Khởi động bằng: npm run server');
     } finally {
       setLoading(false);
     }
@@ -78,21 +63,21 @@ export default function ShortCreator() {
   };
 
   const selectClass =
-    "bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg px-4 py-2 text-sm";
+    'bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg px-4 py-2 text-sm';
   const inputClass =
-    "w-full bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg px-4 py-2 text-sm";
+    'w-full bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg px-4 py-2 text-sm';
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8">
+      <h2 className="mb-6 text-xl font-bold sm:mb-8 sm:text-2xl">
         Video Prompt cho AI Veo
       </h2>
 
       <form
         onSubmit={handleSubmit}
-        className="bg-[var(--bg-card)] rounded-xl p-4 sm:p-6 border border-[var(--border-color)] mb-6"
+        className="mb-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-4 sm:p-6"
       >
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <select
             className={selectClass}
             value={selectedProductId}
@@ -152,69 +137,69 @@ export default function ShortCreator() {
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[var(--accent-purple)] text-white font-medium disabled:opacity-50 text-sm"
+          className="flex items-center gap-2 rounded-lg bg-[var(--accent-purple)] px-6 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {loading ? (
             <span className="animate-spin">⏳</span>
           ) : (
             <Film size={18} />
           )}
-          {loading ? "Đang tạo..." : "Tạo Video Prompt"}
+          {loading ? 'Đang tạo...' : 'Tạo Video Prompt'}
         </button>
       </form>
 
       {result && (
-        <div className="bg-[var(--bg-card)] rounded-xl p-4 sm:p-6 border border-[var(--border-color)]">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <h3 className="font-semibold text-[var(--accent-purple)] text-sm sm:text-base">
+        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-4 sm:p-6">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="text-sm font-semibold text-[var(--accent-purple)] sm:text-base">
               🎬 Storyboard Timeline
             </h3>
             <button
               onClick={handleCopy}
-              className="self-start flex items-center gap-2 px-3 py-1 rounded-lg bg-[var(--bg-secondary)] text-sm"
+              className="flex items-center gap-2 self-start rounded-lg bg-[var(--bg-secondary)] px-3 py-1 text-sm"
             >
               {copied ? (
                 <Check size={14} className="text-green-400" />
               ) : (
                 <Copy size={14} />
               )}
-              {copied ? "Đã copy!" : "Copy Prompt"}
+              {copied ? 'Đã copy!' : 'Copy Prompt'}
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-            <div className="bg-[var(--bg-secondary)] rounded-lg p-3">
+          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-lg bg-[var(--bg-secondary)] p-3">
               <p className="text-xs text-[var(--text-secondary)]">
                 ⏱️ Tổng thời lượng
               </p>
-              <p className="font-semibold text-sm">{result.totalDuration}</p>
+              <p className="text-sm font-semibold">{result.totalDuration}</p>
             </div>
-            <div className="bg-[var(--bg-secondary)] rounded-lg p-3">
+            <div className="rounded-lg bg-[var(--bg-secondary)] p-3">
               <p className="text-xs text-[var(--text-secondary)]">📐 Tỷ lệ</p>
-              <p className="font-semibold text-sm">{result.aspectRatio}</p>
+              <p className="text-sm font-semibold">{result.aspectRatio}</p>
             </div>
-            <div className="bg-[var(--bg-secondary)] rounded-lg p-3">
+            <div className="rounded-lg bg-[var(--bg-secondary)] p-3">
               <p className="text-xs text-[var(--text-secondary)]">
                 📊 Chất lượng
               </p>
-              <p className="font-semibold text-sm">{result.visualQuality}</p>
+              <p className="text-sm font-semibold">{result.visualQuality}</p>
             </div>
           </div>
 
-          <p className="text-xs text-[var(--text-secondary)] mb-3">
+          <p className="mb-3 text-xs text-[var(--text-secondary)]">
             🎨 Phong cách: {result.visualStyle}
           </p>
 
           {/* Timeline segments */}
-          <div className="space-y-3 mb-4">
+          <div className="mb-4 space-y-3">
             {result.timeline.map(
               (seg: ShortVideoTimelineSegment, i: number) => (
                 <div
                   key={i}
-                  className="bg-[var(--bg-secondary)] rounded-lg p-4 border-l-2 border-[var(--accent-purple)]"
+                  className="rounded-lg border-l-2 border-[var(--accent-purple)] bg-[var(--bg-secondary)] p-4"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-mono text-[var(--accent-cyan)]">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="font-mono text-xs text-[var(--accent-cyan)]">
                       {seg.range}
                     </span>
                     <span className="text-xs text-[var(--text-secondary)]">
@@ -225,16 +210,16 @@ export default function ShortCreator() {
                     {seg.prompt}
                   </p>
                 </div>
-              ),
+              )
             )}
           </div>
 
           {/* Full prompt */}
-          <div className="bg-[var(--bg-secondary)] rounded-lg p-4">
-            <p className="text-xs text-[var(--text-secondary)] mb-2">
+          <div className="rounded-lg bg-[var(--bg-secondary)] p-4">
+            <p className="mb-2 text-xs text-[var(--text-secondary)]">
               📝 Full Prompt (copy để gửi cho Veo)
             </p>
-            <pre className="text-sm whitespace-pre-wrap break-words font-mono text-[var(--text-primary)]">
+            <pre className="font-mono text-sm break-words whitespace-pre-wrap text-[var(--text-primary)]">
               {result.videoPromptFull}
             </pre>
           </div>

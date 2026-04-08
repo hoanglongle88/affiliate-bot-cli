@@ -70,8 +70,15 @@ npm run web        # Web Dashboard (dev)
 | `price`       | TEXT        | DEFAULT "Chưa có" |
 | `rating`      | TEXT        | DEFAULT "Chưa có" |
 | `sold`        | TEXT        | DEFAULT "Chưa có" |
+| `usp`         | TEXT        | nullable          |
 | `usage_count` | INTEGER     | DEFAULT 1         |
 | `created_at`  | TIMESTAMPTZ | DEFAULT NOW()     |
+
+> ⚠️ **Nếu chưa có cột `usp`**: Chạy lệnh này trong SQL Editor:
+>
+> ```sql
+> ALTER TABLE products ADD COLUMN IF NOT EXISTS usp TEXT;
+> ```
 
 ### Bảng `video_scripts`
 
@@ -167,17 +174,30 @@ npm run web        # Web Dashboard (dev)
 
 ## 🔧 API Endpoints
 
+### Scripts
+
+| Method   | Endpoint                      | Mô tả                             |
+| -------- | ----------------------------- | --------------------------------- |
+| `POST`   | `/api/scripts`                | Generate video script             |
+| `GET`    | `/api/scripts/history`        | List scripts (pagination, filter) |
+| `GET`    | `/api/scripts/:id`            | Get script by ID                  |
+| `POST`   | `/api/scripts/:id/regenerate` | Regenerate script (same ID)       |
+| `DELETE` | `/api/scripts/:id`            | Delete script                     |
+| `POST`   | `/api/scripts/bulk-delete`    | Delete multiple scripts           |
+| `POST`   | `/api/scripts/export`         | Export scripts to TXT             |
+
 ### Products
 
-| Method   | Endpoint                                 | Mô tả                                    |
-| -------- | ---------------------------------------- | ---------------------------------------- |
-| `GET`    | `/api/products?page=1&limit=10&q=&sort=` | List products (search, sort, pagination) |
-| `GET`    | `/api/products/export`                   | Export ALL products as CSV               |
-| `POST`   | `/api/products/import`                   | Import products from CSV                 |
-| `POST`   | `/api/products`                          | Create product                           |
-| `PUT`    | `/api/products/:id`                      | Update product                           |
-| `DELETE` | `/api/products/:id`                      | Delete product                           |
-| `DELETE` | `/api/products`                          | Delete all products                      |
+| Method   | Endpoint                                 | Mô tả                                          |
+| -------- | ---------------------------------------- | ---------------------------------------------- |
+| `GET`    | `/api/products?page=1&limit=10&q=&sort=` | List products (server-side search, pagination) |
+| `GET`    | `/api/products/export`                   | Export ALL products as CSV                     |
+| `POST`   | `/api/products/import`                   | Import products from CSV                       |
+| `POST`   | `/api/products`                          | Create product                                 |
+| `PUT`    | `/api/products/:id`                      | Update product (by ID)                         |
+| `DELETE` | `/api/products/:id`                      | Delete product                                 |
+| `POST`   | `/api/products/bulk-delete`              | Delete multiple products                       |
+| `DELETE` | `/api/products`                          | Delete all products (dangerous)                |
 
 ### Content Generation
 
@@ -239,5 +259,44 @@ npm run server:prod
 
 ---
 
-**Cập nhật lần cuối:** 2026-04-08
-**Version:** 2.0.0
+## 📝 Changelog
+
+### v2.1.0 — 2026-04-09
+
+#### Scripts Module
+
+- ✅ Server-side pagination (offset/limit) thay vì load 1000 records
+- ✅ Regenerate script giữ nguyên ID (update thay vì delete+create)
+- ✅ Bulk delete scripts (1 query Supabase `.in()`)
+- ✅ Validation → warning (vẫn lưu script dù có cảnh báo)
+- ✅ Debounce generate button (3s cooldown)
+- ✅ Product selector với autocomplete, auto-fill form
+- ✅ Platform filter dropdown
+- ✅ Hook preview trong script list cards
+- ✅ Copy riêng từng phần (Hook/Body/CTA)
+- ✅ Bulk select/delete/export với checkbox
+- ✅ Axios timeout 60s + error interceptor tập trung
+- ✅ Rate limiting: AI endpoints 10/5min, export 3/5min
+
+#### Products Module
+
+- ✅ Server-side pagination + search + sort (Supabase `.range()`, `.or()`)
+- ✅ Fix `usp` persistence — lưu/get/update đầy đủ
+- ✅ Fix PUT update theo ID (không còn upsert theo name)
+- ✅ CSV injection protection (export + import sanitization)
+- ✅ Bulk delete products (1 query `.in()`, cap 100 IDs)
+- ✅ Delete all confirmation modal (cascade delete warning)
+- ✅ Search debounce 400ms, fix double-fetch bug
+- ✅ Backend validation (length limits, trim whitespace)
+- ✅ Import không increment `usageCount` khi update
+- ✅ Export dùng axios instance thay vì raw fetch
+- ✅ Rate limiting: import 5/5min, export 5/5min, deleteAll 2/15min
+
+### v2.0.0 — 2026-04-08
+
+- Migration lên Supabase làm storage duy nhất
+
+---
+
+**Cập nhật lần cuối:** 2026-04-09
+**Version:** 2.1.0

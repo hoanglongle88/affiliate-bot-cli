@@ -54,15 +54,18 @@ export async function saveProduct(product: ProductInfo): Promise<SavedProduct> {
     .single();
 
   if (existing) {
+    const updateData: Record<string, unknown> = {
+      description: product.description,
+      price: product.price,
+      rating: product.rating,
+      sold: product.sold,
+    };
+    // Chỉ thêm usp nếu có giá trị
+    if (product.usp) updateData.usp = product.usp;
+
     const { data: updated } = await supabase
       .from("products")
-      .update({
-        description: product.description,
-        price: product.price,
-        rating: product.rating,
-        sold: product.sold,
-        usage_count: existing.usage_count + 1,
-      })
+      .update(updateData)
       .eq("id", existing.id)
       .select()
       .single();
@@ -74,6 +77,7 @@ export async function saveProduct(product: ProductInfo): Promise<SavedProduct> {
       price: updated!.price,
       rating: updated!.rating,
       sold: updated!.sold,
+      usp: updated!.usp,
       createdAt: updated!.created_at,
       usageCount: updated!.usage_count,
     };
@@ -86,7 +90,7 @@ export async function saveProduct(product: ProductInfo): Promise<SavedProduct> {
     usageCount: 1,
   };
 
-  await supabase.from("products").insert({
+  const insertData: Record<string, unknown> = {
     id: saved.id,
     name: saved.name,
     description: saved.description,
@@ -95,32 +99,115 @@ export async function saveProduct(product: ProductInfo): Promise<SavedProduct> {
     sold: saved.sold,
     usage_count: saved.usageCount,
     created_at: saved.createdAt,
-  });
+  };
+  if (saved.usp) insertData.usp = saved.usp;
+
+  await supabase.from("products").insert(insertData);
 
   return saved;
 }
 
-export async function getProducts(): Promise<SavedProduct[]> {
+export async function updateProductById(
+  id: string,
+  product: Partial<ProductInfo> & { name: string; description: string },
+): Promise<SavedProduct | undefined> {
+  const updateData: Record<string, unknown> = {
+    name: product.name,
+    description: product.description,
+  };
+  if (product.price !== undefined) updateData.price = product.price;
+  if (product.rating !== undefined) updateData.rating = product.rating;
+  if (product.sold !== undefined) updateData.sold = product.sold;
+  if (product.usp !== undefined) updateData.usp = product.usp;
+
   const { data, error } = await supabase
     .from("products")
-    .select("*")
-    .order("usage_count", { ascending: false });
+    .update(updateData)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error || !data) return undefined;
+
+  return {
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    price: data.price,
+    rating: data.rating,
+    sold: data.sold,
+    usp: data.usp,
+    createdAt: data.created_at,
+    usageCount: data.usage_count,
+  };
+}
+
+export async function getProducts(
+  limit: number = 50,
+  offset: number = 0,
+  search?: string,
+  sort: string = "date_desc",
+): Promise<{ products: SavedProduct[]; total: number }> {
+  let query = supabase.from("products").select("*", { count: "exact" });
+
+  // Server-side search
+  if (search?.trim()) {
+    const s = search.trim();
+    query = query.or(
+      `name.ilike.%${s}%,description.ilike.%${s}%,price.ilike.%${s}%`,
+    );
+  }
+
+  // Server-side sort
+  switch (sort) {
+    case "name_asc":
+      query = query.order("name", { ascending: true });
+      break;
+    case "name_desc":
+      query = query.order("name", { ascending: false });
+      break;
+    case "usage_desc":
+      query = query.order("usage_count", { ascending: false });
+      break;
+    case "usage_asc":
+      query = query.order("usage_count", { ascending: true });
+      break;
+    case "date_asc":
+      query = query.order("created_at", { ascending: true });
+      break;
+    case "date_desc":
+    default:
+      query = query.order("created_at", { ascending: false });
+      break;
+  }
+
+  const { data, error, count } = await query.range(offset, offset + limit - 1);
 
   if (error || !data) {
     console.error("⚠️  Supabase error:", error?.message);
-    return [];
+    return { products: [], total: 0 };
   }
 
-  return data.map((p: any) => ({
+  const products = data.map((p: any) => ({
     id: p.id,
     name: p.name,
     description: p.description,
     price: p.price,
     rating: p.rating,
     sold: p.sold,
+    usp: p.usp,
     createdAt: p.created_at,
     usageCount: p.usage_count,
   }));
+
+  return { products, total: count ?? 0 };
+}
+
+/** Legacy compat — returns array for CLI usage */
+export async function getAllProducts(): Promise<SavedProduct[]> {
+  const MAX = 10000;
+  const { products } = await getProducts(MAX);
+  return products;
 }
 
 export async function getProductById(
@@ -141,6 +228,7 @@ export async function getProductById(
     price: data.price,
     rating: data.rating,
     sold: data.sold,
+    usp: data.usp,
     createdAt: data.created_at,
     usageCount: data.usage_count,
   };
@@ -151,9 +239,22 @@ export async function deleteProduct(id: string): Promise<boolean> {
   return !error;
 }
 
+export async function bulkDeleteProducts(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const { error } = await supabase.from("products").delete().in("id", ids);
+  return error ? 0 : ids.length;
+}
+
 export async function deleteAllProducts(): Promise<number> {
+  // Count first, then delete
+  const { count, error: countError } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true });
+
+  if (countError) return 0;
+
   const { error } = await supabase.from("products").delete().neq("id", "");
-  return error ? 0 : 1;
+  return error ? 0 : (count ?? 0);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -198,19 +299,25 @@ export async function saveVideoScript(
 
 export async function getVideoScripts(
   limit: number = 50,
-): Promise<SavedVideoScript[]> {
-  const { data, error } = await supabase
-    .from("video_scripts")
-    .select("*")
+  offset: number = 0,
+  platform?: string,
+): Promise<{ scripts: SavedVideoScript[]; total: number }> {
+  let query = supabase.from("video_scripts").select("*", { count: "exact" });
+
+  if (platform) {
+    query = query.eq("platform", platform);
+  }
+
+  const { data, error, count } = await query
     .order("created_at", { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
 
   if (error || !data) {
     console.error("⚠️  Supabase error:", error?.message);
-    return [];
+    return { scripts: [], total: 0 };
   }
 
-  return data.map((s: any) => ({
+  const scripts = data.map((s: any) => ({
     id: s.id,
     productId: s.product_id,
     platform: s.platform,
@@ -223,6 +330,8 @@ export async function getVideoScripts(
     rawAiResponse: s.raw_ai_response,
     createdAt: s.created_at,
   }));
+
+  return { scripts, total: count ?? 0 };
 }
 
 export async function getVideoScriptById(
@@ -281,6 +390,36 @@ export async function getVideoScriptsByProductId(
 
 export async function deleteVideoScript(id: string): Promise<boolean> {
   const { error } = await supabase.from("video_scripts").delete().eq("id", id);
+  return !error;
+}
+
+export async function bulkDeleteVideoScripts(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const { error } = await supabase.from("video_scripts").delete().in("id", ids);
+  return error ? 0 : ids.length;
+}
+
+export async function updateVideoScript(
+  id: string,
+  script: Partial<VideoScript>,
+): Promise<boolean> {
+  const updates: Record<string, unknown> = {};
+  if (script.platform !== undefined) updates.platform = script.platform;
+  if (script.title !== undefined) updates.title = script.title;
+  if (script.hook !== undefined) updates.hook = script.hook;
+  if (script.body !== undefined) updates.body = script.body;
+  if (script.voiceoverCTA !== undefined)
+    updates.voiceover_cta = script.voiceoverCTA;
+  if (script.wordCount !== undefined) updates.word_count = script.wordCount;
+  if (script.estimatedDuration !== undefined)
+    updates.estimated_duration = script.estimatedDuration;
+
+  if (Object.keys(updates).length === 0) return false;
+
+  const { error } = await supabase
+    .from("video_scripts")
+    .update(updates)
+    .eq("id", id);
   return !error;
 }
 

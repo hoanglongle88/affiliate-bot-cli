@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
@@ -12,27 +12,27 @@ import {
   TrendingUp,
   Film,
   Image,
-} from "lucide-react";
-import Dashboard from "./pages/Dashboard";
-import Products from "./pages/Products";
-import Scripts from "./pages/Scripts";
-import Captions from "./pages/Captions";
-import HistoryPage from "./pages/HistoryPage";
-import ServerStatus from "./pages/ServerStatus";
-import TrendResearcher from "./pages/TrendResearcher";
-import ShortCreator from "./pages/ShortCreator";
-import ImageCreator from "./pages/ImageCreator";
+} from 'lucide-react';
+import Dashboard from './pages/Dashboard';
+import Products from './pages/Products';
+import Scripts from './pages/Scripts';
+import Captions from './pages/Captions';
+import HistoryPage from './pages/HistoryPage';
+import ServerStatus from './pages/ServerStatus';
+import TrendResearcher from './pages/TrendResearcher';
+import ShortCreator from './pages/ShortCreator';
+import ImageCreator from './pages/ImageCreator';
 
 const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Tổng quan" },
-  { to: "/products", icon: Package, label: "Sản phẩm" },
-  { to: "/trend", icon: TrendingUp, label: "Quét Trend" },
-  { to: "/scripts", icon: FileText, label: "Kịch bản" },
-  { to: "/captions", icon: MessageSquare, label: "Caption" },
-  { to: "/short", icon: Film, label: "Video Veo" },
-  { to: "/image", icon: Image, label: "Brief Ảnh" },
-  { to: "/history", icon: History, label: "Lịch sử" },
-  { to: "/server", icon: Server, label: "Máy chủ" },
+  { to: '/', icon: LayoutDashboard, label: 'Tổng quan' },
+  { to: '/products', icon: Package, label: 'Sản phẩm' },
+  { to: '/trend', icon: TrendingUp, label: 'Quét Trend' },
+  { to: '/scripts', icon: FileText, label: 'Kịch bản' },
+  { to: '/captions', icon: MessageSquare, label: 'Caption' },
+  { to: '/short', icon: Film, label: 'Video Veo' },
+  { to: '/image', icon: Image, label: 'Brief Ảnh' },
+  { to: '/history', icon: History, label: 'Lịch sử' },
+  { to: '/server', icon: Server, label: 'Máy chủ' },
 ];
 
 export default function App() {
@@ -40,48 +40,48 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="flex h-screen bg-[var(--bg-primary)] overflow-hidden">
+      <div className="flex h-screen overflow-hidden bg-[var(--bg-primary)]">
         {/* Mobile overlay */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+            className="fixed inset-0 z-20 bg-black/50 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
         {/* Sidebar */}
         <aside
-          className={`fixed lg:static inset-y-0 left-0 z-30 w-64 bg-[var(--bg-secondary)] border-r border-[var(--border-color)] flex flex-col transform transition-transform duration-300 ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          className={`fixed inset-y-0 left-0 z-30 flex w-64 transform flex-col border-r border-[var(--border-color)] bg-[var(--bg-secondary)] transition-transform duration-300 lg:static ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`}
         >
-          <div className="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
+          <div className="flex items-center justify-between border-b border-[var(--border-color)] p-6">
             <div>
               <h1 className="text-xl font-bold text-[var(--accent-cyan)]">
                 Affiliate Bot
               </h1>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">
                 Bảng điều khiển v2.0
               </p>
             </div>
             <button
-              className="lg:hidden text-[var(--text-secondary)]"
+              className="text-[var(--text-secondary)] lg:hidden"
               onClick={() => setSidebarOpen(false)}
             >
               <X size={20} />
             </button>
           </div>
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 space-y-1 overflow-y-auto p-4">
             {navItems.map(({ to, icon: Icon, label }) => (
               <NavLink
                 key={to}
                 to={to}
                 onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                  `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                     isActive
-                      ? "bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] font-medium"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]"
+                      ? 'bg-[var(--accent-cyan)]/10 font-medium text-[var(--accent-cyan)]'
+                      : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]'
                   }`
                 }
               >
@@ -90,7 +90,7 @@ export default function App() {
               </NavLink>
             ))}
           </nav>
-          <div className="p-4 border-t border-[var(--border-color)]">
+          <div className="border-t border-[var(--border-color)] p-4">
             <p className="text-xs text-[var(--text-secondary)]">
               © 2026 Affiliate Bot CLI
             </p>
@@ -98,9 +98,9 @@ export default function App() {
         </aside>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden">
           {/* Mobile header */}
-          <header className="lg:hidden bg-[var(--bg-secondary)] border-b border-[var(--border-color)] px-4 py-3 flex items-center gap-3">
+          <header className="flex items-center gap-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)] px-4 py-3 lg:hidden">
             <button
               onClick={() => setSidebarOpen(true)}
               className="text-[var(--text-primary)]"
