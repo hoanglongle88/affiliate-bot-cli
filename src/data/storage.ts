@@ -6,6 +6,7 @@ import {
   VideoScript,
   PostDescription,
   TrendBrief,
+  ShortVideoPrompt,
 } from "../types/content";
 import {
   SavedVideoScript,
@@ -689,7 +690,13 @@ export async function saveToHistoryWithRefs(
   productId: string | null,
   scriptId: string | null,
   descriptionId: string | null,
-  workflow: "script" | "description" | "full" | "trend" | "image_brief",
+  workflow:
+    | "script"
+    | "description"
+    | "full"
+    | "trend"
+    | "image_brief"
+    | "short_video",
 ): Promise<PersistedHistoryEntry> {
   const entry: PersistedHistoryEntry = {
     id: generateId(),
@@ -910,6 +917,46 @@ export async function deleteHistoryEntry(id: string): Promise<boolean> {
 export async function deleteHistoryEntryById(id: string): Promise<boolean> {
   const { error } = await supabase.from("history").delete().eq("id", id);
   return !error;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SHORT VIDEO PROMPTS
+// ═══════════════════════════════════════════════════════════
+
+export async function saveShortVideoPrompt(
+  prompt: ShortVideoPrompt,
+  productId: string | null,
+  scriptId: string | null,
+): Promise<void> {
+  await supabase.from("short_video_prompts").insert({
+    id: generateId(),
+    product_id: productId,
+    script_id: scriptId,
+    style_analysis: prompt.styleAnalysis,
+    video_prompt: prompt.videoPrompt,
+    aspect_ratio: prompt.aspectRatio,
+    visual_quality: prompt.visualQuality,
+    created_at: new Date().toISOString(),
+  });
+}
+
+export async function getShortVideoPrompts(
+  limit: number = 50,
+): Promise<ShortVideoPrompt[]> {
+  const { data, error } = await supabase
+    .from("short_video_prompts")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  return data.map((p: any) => ({
+    styleAnalysis: p.style_analysis,
+    videoPrompt: p.video_prompt,
+    aspectRatio: p.aspect_ratio,
+    visualQuality: p.visual_quality,
+  }));
 }
 
 // ── Export (filesystem only) ──

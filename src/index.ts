@@ -15,6 +15,7 @@ import { VideoCreatorAgent } from "./agents/video-creator";
 import { MarketingWriterAgent } from "./agents/marketing-writer";
 import { AutonomousTrendScanner } from "./agents/trend-scanner";
 import { ImageCreatorAgent } from "./agents/image-creator";
+import { ShortCreatorAgent } from "./agents/short-creator";
 import { ImagePromptInput } from "./prompts/image-creator";
 import {
   formatScriptOutput,
@@ -51,6 +52,7 @@ import {
   savePostDescription,
   saveTrendBrief,
   saveImageBrief,
+  saveShortVideoPrompt,
 } from "./data/storage";
 import { TTSService } from "./services/tts-service";
 import { getUsage, resetUsage } from "./services/usage-tracker";
@@ -740,6 +742,153 @@ ${brief.prompts.lifestyle}
 
     if (action === "regenerate") {
       await generateImageBriefFlow();
+      return;
+    }
+  }
+}
+
+// ── Short Video Prompt Flow ──
+
+async function generateShortVideoFlow() {
+  console.log(
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    chalk.bold.cyan("║   🎬  SHORT CREATOR - Video Prompt cho AI Veo      ║"),
+  );
+  console.log(
+    chalk.bold.cyan("║       Tạo mô tả video chi tiết từ kịch bản         ║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
+  );
+
+  const { product, productId } = await selectOrEnterProduct();
+  const platform = await selectPlatform();
+
+  // Get visual cues from existing script or enter manually
+  const { source } = await inquirer.prompt([
+    {
+      type: "rawlist",
+      name: "source",
+      message: "📋 Nguồn cảnh quay:",
+      choices: [
+        {
+          name: "🎬 Lấy từ script đã lưu của sản phẩm này",
+          value: "from-script",
+        },
+        { name: "✏️ Nhập thủ công", value: "manual" },
+      ],
+    },
+  ]);
+
+  let visualCues: string[] = [];
+  let angle = "product-showcase";
+  let scriptDbId: string | null = null;
+
+  if (source === "from-script") {
+    const scripts = await getVideoScriptsByProductId(productId!, 10);
+    if (scripts.length === 0) {
+      console.log(chalk.yellow("\n📭 Chưa có script nào cho sản phẩm này.\n"));
+      return;
+    }
+
+    const scriptChoices = scripts.map((s) => ({
+      name: `[${s.platform}] ${s.title}`,
+      value: s.id,
+    }));
+
+    const { selectedScript } = await inquirer.prompt([
+      {
+        type: "rawlist",
+        name: "selectedScript",
+        message: "🎬 Chọn script:",
+        choices: scriptChoices,
+      },
+    ]);
+
+    const script = await getVideoScriptById(selectedScript);
+    if (script) {
+      visualCues = script.body.split("\n").filter((l) => l.trim().length > 0);
+      angle = script.title.split(":")[0] || "product-showcase";
+      scriptDbId = selectedScript;
+    }
+  } else {
+    const { cues } = await inquirer.prompt([
+      {
+        type: "input",
+        name: "cues",
+        message: "🎬 Nhập cảnh quay (cách nhau bởi dấu |):",
+        validate: (input: string) =>
+          input.trim().length > 0 ? true : "Vui lòng nhập ít nhất 1 cảnh",
+      },
+    ]);
+    visualCues = cues
+      .split("|")
+      .map((c: string) => c.trim())
+      .filter(Boolean);
+  }
+
+  // Get angle
+  const { selectedAngle } = await inquirer.prompt([
+    {
+      type: "rawlist",
+      name: "selectedAngle",
+      message: "💡 Góc tiếp cận:",
+      choices: [
+        { name: "Pain point — Đánh vào nỗi đau", value: "pain-point" },
+        { name: "Price shock — Giá bất ngờ", value: "price-shock" },
+        { name: "Social proof — Bằng chứng xã hội", value: "social-proof" },
+        { name: "Curiosity — Gây tò mò", value: "curiosity" },
+        {
+          name: "Product showcase — Trưng bày sản phẩm",
+          value: "product-showcase",
+        },
+      ],
+    },
+  ]);
+  angle = selectedAngle;
+
+  // Generate prompt
+  const agent = new ShortCreatorAgent();
+  const prompt = await agent.generatePrompt(
+    product.name,
+    visualCues,
+    angle,
+    platform,
+  );
+  agent.displayPrompt(prompt);
+
+  // Save to DB
+  await saveShortVideoPrompt(prompt, productId, scriptDbId);
+  await saveToHistoryWithRefs(productId, scriptDbId, null, "short_video");
+  console.log(chalk.green("💾 Đã lưu video prompt vào database!\n"));
+
+  // Post-actions
+  while (true) {
+    const { action } = await inquirer.prompt([
+      {
+        type: "rawlist",
+        name: "action",
+        message: "Làm gì tiếp theo?",
+        choices: [
+          { name: "📋  Copy prompt vào clipboard", value: "copy" },
+          { name: "🔄  Tạo lại prompt khác", value: "regenerate" },
+          { name: "⏭️  Về menu chính", value: "menu" },
+        ],
+      },
+    ]);
+
+    if (action === "menu") return;
+
+    if (action === "copy") {
+      const text = `VIDEO PROMPT (${prompt.aspectRatio}, ${prompt.visualQuality})\n\nStyle: ${prompt.styleAnalysis}\n\n${prompt.videoPrompt}`;
+      await copyToClipboard(text, "video prompt");
+      continue;
+    }
+
+    if (action === "regenerate") {
+      await generateShortVideoFlow();
       return;
     }
   }
@@ -1643,6 +1792,10 @@ async function askMainMenu(): Promise<string> {
           name: "[Image Creator] - Tạo brief ảnh ads (prompt AI)",
           value: "imagebrief",
         },
+        {
+          name: "[Short Creator] - Tạo video prompt cho AI Veo",
+          value: "short_video",
+        },
         new inquirer.Separator(" 🎨 Tiện ích & Quản lý "),
         {
           name: "[TTS Voice] - Chuyển kịch bản thành giọng nói (Google TTS)",
@@ -1698,6 +1851,8 @@ async function mainLoop() {
       await generateTrendScanFlow();
     } else if (action === "imagebrief") {
       await generateImageBriefFlow();
+    } else if (action === "short_video") {
+      await generateShortVideoFlow();
     } else if (action === "tts") {
       await generateTTSFromScript();
     } else if (action === "history") {

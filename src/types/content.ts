@@ -87,6 +87,15 @@ export interface TrendBrief {
 
 export type ScanSource = "tiktok" | "youtube" | "shopee";
 
+// ── Short Video Creator ──
+
+export interface ShortVideoPrompt {
+  styleAnalysis: string; // Phân tích phong cách hình ảnh (VN)
+  videoPrompt: string; // Prompt chi tiết tiếng Anh cho Veo
+  aspectRatio: string; // 9:16, 16:9, 1:1
+  visualQuality: string; // 1080p, 60fps, cinematic...
+}
+
 // ── Persisted Content Types (saved to DB) ──
 
 export interface SavedVideoScript {
@@ -156,6 +165,12 @@ export interface PersistedHistoryEntry {
   productId: string | null;
   scriptId: string | null;
   descriptionId: string | null;
-  workflow: "script" | "description" | "full" | "trend" | "image_brief";
+  workflow:
+    | "script"
+    | "description"
+    | "full"
+    | "trend"
+    | "image_brief"
+    | "short_video";
   createdAt: string;
 }

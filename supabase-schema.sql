@@ -78,6 +78,18 @@ CREATE TABLE IF NOT EXISTS image_briefs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ── Short Video Prompts table ──
+CREATE TABLE IF NOT EXISTS short_video_prompts (
+  id TEXT PRIMARY KEY,
+  product_id TEXT REFERENCES products(id) ON DELETE CASCADE,
+  script_id TEXT REFERENCES video_scripts(id) ON DELETE SET NULL,
+  style_analysis TEXT NOT NULL,
+  video_prompt TEXT NOT NULL,
+  aspect_ratio TEXT NOT NULL DEFAULT '9:16',
+  visual_quality TEXT NOT NULL DEFAULT '1080p, 60fps',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ── History table (lightweight, references content tables) ──
 CREATE TABLE IF NOT EXISTS history (
   id TEXT PRIMARY KEY,
@@ -117,6 +129,7 @@ ALTER TABLE video_scripts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE post_descriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trend_briefs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE image_briefs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE short_video_prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE history ENABLE ROW LEVEL SECURITY;
 
 -- ── Policies (CLI tool, not multi-tenant) ──
@@ -125,4 +138,5 @@ CREATE POLICY "Allow all on video_scripts" ON video_scripts FOR ALL USING (true)
 CREATE POLICY "Allow all on post_descriptions" ON post_descriptions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all on trend_briefs" ON trend_briefs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all on image_briefs" ON image_briefs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all on short_video_prompts" ON short_video_prompts FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all on history" ON history FOR ALL USING (true) WITH CHECK (true);
