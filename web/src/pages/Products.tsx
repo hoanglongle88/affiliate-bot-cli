@@ -10,15 +10,21 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  Download,
+  Upload,
+  FileUp,
 } from "lucide-react";
 import {
   getProducts,
   createProduct,
   updateProduct,
   deleteProduct,
+  exportProducts,
+  importProducts,
 } from "../lib/api";
 import type { Product } from "../interfaces";
 import ErrorBoundary from "../components/ErrorBoundary";
+import toast from "react-hot-toast";
 
 function ProductsContent() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -27,6 +33,7 @@ function ProductsContent() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("date_desc");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -38,31 +45,38 @@ function ProductsContent() {
     sold: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [importing, setImporting] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const PAGE_SIZE = 10;
 
-  const load = useCallback(async (searchQuery?: string, pageNum?: number) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getProducts({
-        q: searchQuery || undefined,
-        page: pageNum || 1,
-        limit: PAGE_SIZE,
-      });
-      setProducts(data.products);
-      setTotal(data.total);
-      setTotalPages(data.totalPages);
-      setPage(data.page);
-    } catch (e: unknown) {
-      const message =
-        e instanceof Error ? e.message : "Không thể tải danh sách sản phẩm";
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (searchQuery?: string, pageNum?: number, sortQuery?: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getProducts({
+          q: searchQuery || undefined,
+          page: pageNum || 1,
+          limit: PAGE_SIZE,
+          sort: sortQuery || sort,
+        });
+        setProducts(data.products);
+        setTotal(data.total);
+        setTotalPages(data.totalPages);
+        setPage(data.page);
+      } catch (e: unknown) {
+        const message =
+          e instanceof Error ? e.message : "Không thể tải danh sách sản phẩm";
+        setError(message);
+        toast.error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [sort],
+  );
 
   useEffect(() => {
     load();
@@ -74,14 +88,20 @@ function ProductsContent() {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
       setPage(1);
-      load(value, 1);
+      load(value, 1, sort);
     }, 300);
+  };
+
+  const handleSort = (newSort: string) => {
+    setSort(newSort);
+    setPage(1);
+    load(search, 1, newSort);
   };
 
   const handlePage = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
-    load(search, newPage);
+    load(search, newPage, sort);
   };
 
   const resetForm = () => {
@@ -94,12 +114,28 @@ function ProductsContent() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await createProduct(form);
+      // Optimistic update
+      const tempId = "temp_" + Date.now();
+      const newProduct: Product = {
+        id: tempId,
+        name: form.name,
+        description: form.description,
+        price: form.price || "Chưa có",
+        rating: form.rating || "Chưa có",
+        sold: form.sold || "Chưa có",
+        usageCount: 0,
+        createdAt: new Date().toISOString(),
+      };
+      setProducts((prev) => [newProduct, ...prev]);
       resetForm();
-      load(search, page);
+
+      await createProduct(form);
+      toast.success("Đã thêm sản phẩm");
+      load(search, page, sort);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Không thể tạo sản phẩm";
-      alert(message);
+      toast.error(message);
+      load(search, page, sort); // Rollback
     } finally {
       setSubmitting(false);
     }
@@ -120,26 +156,88 @@ function ProductsContent() {
     e.preventDefault();
     if (!editId) return;
     setSubmitting(true);
+    const oldProducts = [...products];
+
     try {
-      await updateProduct(editId, form);
+      // Optimistic update
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === editId
+            ? {
+                ...p,
+                name: form.name,
+                description: form.description,
+                price: form.price,
+                rating: form.rating,
+                sold: form.sold,
+              }
+            : p,
+        ),
+      );
       resetForm();
-      load(search, page);
+
+      await updateProduct(editId, form);
+      toast.success("Đã cập nhật sản phẩm");
+      load(search, page, sort);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Không thể cập nhật";
-      alert(message);
+      toast.error(message);
+      setProducts(oldProducts); // Rollback
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Xóa sản phẩm này?")) return;
+    const oldProducts = [...products];
+    // Optimistic update
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+
     try {
       await deleteProduct(id);
-      load(search, page);
+      toast.success("Đã xóa sản phẩm");
+      // If current page becomes empty, go to previous page
+      if (products.length === 1 && page > 1) {
+        handlePage(page - 1);
+      }
     } catch {
-      alert("Không thể xóa");
+      toast.error("Không thể xóa");
+      setProducts(oldProducts); // Rollback
     }
+  };
+
+  const handleExport = () => {
+    exportProducts();
+    toast.success("Đang tải file CSV...");
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const csvContent = ev.target?.result as string;
+      setImporting(true);
+      try {
+        const result = await importProducts(csvContent);
+        toast.success(
+          `Đã nhập ${result.success} sản phẩm${result.skipped ? `, bỏ qua ${result.skipped}` : ""}`,
+        );
+        load(search, page, sort);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Lỗi import CSV";
+        toast.error(message);
+      } finally {
+        setImporting(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    };
+    reader.readAsText(file);
   };
 
   const inputClass =
@@ -150,6 +248,15 @@ function ProductsContent() {
     "px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] text-sm hover:bg-[var(--bg-card)]";
   const btnDanger =
     "p-2 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300";
+
+  const SORT_OPTIONS = [
+    { value: "date_desc", label: "Mới nhất" },
+    { value: "date_asc", label: "Cũ nhất" },
+    { value: "name_asc", label: "Tên A-Z" },
+    { value: "name_desc", label: "Tên Z-A" },
+    { value: "usage_desc", label: "Dùng nhiều nhất" },
+    { value: "usage_asc", label: "Dùng ít nhất" },
+  ];
 
   return (
     <div className="flex flex-col h-full">
@@ -162,14 +269,40 @@ function ProductsContent() {
               {total} sản phẩm {search && `• Tìm thấy "${search}"`}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => load(search, page)}
+              onClick={() => load(search, page, sort)}
               className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:bg-[var(--bg-secondary)]"
               title="Làm mới"
             >
               <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
             </button>
+            <button
+              onClick={handleExport}
+              className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:bg-[var(--bg-secondary)]"
+              title="Xuất CSV"
+            >
+              <Download size={18} />
+            </button>
+            <button
+              onClick={handleImportClick}
+              disabled={importing}
+              className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
+              title="Nhập CSV"
+            >
+              {importing ? (
+                <span className="animate-spin">⏳</span>
+              ) : (
+                <Upload size={18} />
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleImportFile}
+              className="hidden"
+            />
             <button onClick={() => setShowForm(true)} className={btnPrimary}>
               <Plus size={18} />{" "}
               <span className="hidden sm:inline">Thêm sản phẩm</span>
@@ -178,29 +311,42 @@ function ProductsContent() {
           </div>
         </div>
 
-        {/* Search bar */}
-        <div className="mt-4 relative">
-          <Search
-            size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"
-          />
-          <input
-            className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-cyan)]"
-            placeholder="Tìm kiếm theo tên, mô tả, giá..."
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-          {search && (
-            <button
-              onClick={() => {
-                setSearch("");
-                load("", 1);
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            >
-              <X size={16} />
-            </button>
-          )}
+        {/* Search + Sort bar */}
+        <div className="mt-4 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"
+            />
+            <input
+              className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg pl-10 pr-10 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-cyan)]"
+              placeholder="Tìm kiếm theo tên, mô tả, giá..."
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                onClick={() => {
+                  setSearch("");
+                  load("", 1, sort);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          <select
+            className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-cyan)]"
+            value={sort}
+            onChange={(e) => handleSort(e.target.value)}
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -215,11 +361,34 @@ function ProductsContent() {
             <AlertCircle size={32} className="text-red-400 mb-3" />
             <p className="text-sm">{error}</p>
             <button
-              onClick={() => load(search, page)}
+              onClick={() => load(search, page, sort)}
               className="mt-3 px-4 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] text-sm"
             >
               Thử lại
             </button>
+          </div>
+        ) : products.length === 0 ? (
+          /* Empty state */
+          <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+            <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] flex items-center justify-center mb-4">
+              <FileUp size={32} className="text-[var(--text-secondary)]" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">
+              {search ? "Không tìm thấy kết quả" : "Chưa có sản phẩm nào"}
+            </h3>
+            <p className="text-sm text-[var(--text-secondary)] mb-4 max-w-sm">
+              {search
+                ? `Không có sản phẩm nào khớp "${search}". Thử từ khóa khác.`
+                : "Bắt đầu bằng cách thêm sản phẩm mới hoặc nhập từ file CSV."}
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowForm(true)} className={btnPrimary}>
+                <Plus size={16} /> Thêm sản phẩm
+              </button>
+              <button onClick={handleImportClick} className={btnSecondary}>
+                <FileUp size={16} /> Nhập CSV
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -281,13 +450,6 @@ function ProductsContent() {
                   ))}
                 </tbody>
               </table>
-              {products.length === 0 && (
-                <div className="text-center py-16 text-[var(--text-secondary)]">
-                  <p className="text-sm">
-                    {search ? "Không tìm thấy kết quả" : "Chưa có sản phẩm nào"}
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* Mobile cards */}
@@ -321,11 +483,6 @@ function ProductsContent() {
                   </div>
                 </div>
               ))}
-              {products.length === 0 && (
-                <div className="text-center py-12 text-[var(--text-secondary)] text-sm">
-                  {search ? "Không tìm thấy kết quả" : "Chưa có sản phẩm nào"}
-                </div>
-              )}
             </div>
           </>
         )}
@@ -355,7 +512,11 @@ function ProductsContent() {
                 <button
                   key={p}
                   onClick={() => handlePage(p)}
-                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${p === page ? "bg-[var(--accent-cyan)] text-[var(--bg-primary)]" : "hover:bg-[var(--bg-card)]"}`}
+                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                    p === page
+                      ? "bg-[var(--accent-cyan)] text-[var(--bg-primary)]"
+                      : "hover:bg-[var(--bg-card)]"
+                  }`}
                 >
                   {p}
                 </button>

@@ -17,6 +17,7 @@ export default function Dashboard() {
   });
   const [status, setStatus] = useState<string>("đang kiểm tra...");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -30,7 +31,10 @@ export default function Dashboard() {
         });
         setError(null);
       } catch (e) {
+        console.error("[Dashboard] Stats error:", e);
         setError(e instanceof Error ? e.message : "Không thể tải dữ liệu");
+      } finally {
+        setLoading(false);
       }
     };
     load();
@@ -86,9 +90,15 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl font-bold">Tổng quan</h2>
         <span
-          className={`self-start px-3 py-1 rounded-full text-sm font-medium ${status === "hoạt động" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}
+          className={`self-start px-3 py-1 rounded-full text-sm font-medium ${
+            loading
+              ? "bg-yellow-500/20 text-yellow-400"
+              : status === "hoạt động"
+                ? "bg-green-500/20 text-green-400"
+                : "bg-red-500/20 text-red-400"
+          }`}
         >
-          API {status}
+          {loading ? "⏳ Đang tải..." : `API ${status}`}
         </span>
       </div>
 
@@ -101,9 +111,17 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[var(--text-secondary)]">{label}</p>
-                <p className="text-3xl font-bold mt-1">{value}</p>
+                {loading ? (
+                  <div className="h-9 w-16 mt-1 rounded bg-[var(--bg-secondary)] animate-pulse" />
+                ) : (
+                  <p className="text-3xl font-bold mt-1">{value}</p>
+                )}
               </div>
-              <Icon className={color} size={32} />
+              {loading ? (
+                <div className="h-8 w-8 rounded-full bg-[var(--bg-secondary)] animate-pulse" />
+              ) : (
+                <Icon className={color} size={32} />
+              )}
             </div>
           </div>
         ))}

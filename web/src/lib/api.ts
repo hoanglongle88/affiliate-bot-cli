@@ -17,11 +17,13 @@ export const getProducts = (params?: {
   q?: string;
   page?: number;
   limit?: number;
+  sort?: string;
 }) => {
   const query = new URLSearchParams();
   if (params?.q) query.set("q", params.q);
   if (params?.page) query.set("page", String(params.page));
   if (params?.limit) query.set("limit", String(params.limit));
+  if (params?.sort) query.set("sort", params.sort);
   return api.get<ProductsResponse>(`/products?${query}`).then((r) => r.data);
 };
 export const createProduct = (data: {
@@ -43,6 +45,10 @@ export const updateProduct = (
 ) => api.put(`/products/${id}`, data).then((r) => r.data);
 export const deleteProduct = (id: string) =>
   api.delete(`/products/${id}`).then((r) => r.data);
+export const exportProducts = () =>
+  window.open("/api/products/export", "_blank");
+export const importProducts = (csvContent: string) =>
+  api.post("/products/import", { csvContent }).then((r) => r.data);
 
 // Scripts
 interface ScriptResponse {
