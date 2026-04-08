@@ -13,6 +13,15 @@ import {
 import { Platform, ProductInfo } from "../../types/content";
 import { validateScript } from "../../utils/validator";
 
+// Script generation limiter — 10 per 5min
+const scriptGenLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 10,
+  message: { error: "Quá nhiều lần tạo kịch bản. Vui lòng đợi 5 phút." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Export route limiter — 3 per 5min
 const exportLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
@@ -42,6 +51,7 @@ interface CreateScriptRequest {
 // POST /api/scripts - Create new script
 router.post(
   "/",
+  scriptGenLimiter,
   async (req: Request<{}, {}, CreateScriptRequest>, res: Response) => {
     try {
       const { product, platform, productId = null } = req.body;
@@ -67,6 +77,8 @@ router.post(
           ...script,
           id: saved.id,
           productId: saved.productId,
+          // Normalize casing to match GET response
+          voiceoverCta: script.voiceoverCTA,
         },
         warnings: warnings.length > 0 ? warnings : undefined,
         message: "Script created and saved",
@@ -214,6 +226,8 @@ router.post("/:id/regenerate", async (req: Request, res: Response) => {
         ...newScript,
         id,
         productId: oldScript.productId,
+        // Normalize casing to match GET response
+        voiceoverCta: newScript.voiceoverCTA,
       },
       warnings: warnings.length > 0 ? warnings : undefined,
       message: "Script regenerated successfully (same ID)",

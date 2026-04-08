@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import rateLimit from "express-rate-limit";
 import {
   getHistory,
   getHistoryWithRefs,
@@ -7,6 +8,15 @@ import {
 } from "../../data/storage";
 
 const router = Router();
+
+// Clear history limiter — 2 req/15min
+const clearLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 2,
+  message: { error: "Quá nhiều lần xóa lịch sử. Vui lòng đợi 15 phút." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // GET /api/history - List history
 router.get("/", async (_req: Request, res: Response) => {
@@ -33,7 +43,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
 });
 
 // DELETE /api/history - Clear all history
-router.delete("/", async (_req: Request, res: Response) => {
+router.delete("/", clearLimiter, async (_req: Request, res: Response) => {
   try {
     await clearHistory();
     res.json({ message: "History cleared" });
