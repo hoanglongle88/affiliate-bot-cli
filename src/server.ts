@@ -54,7 +54,7 @@ if (fs.existsSync(webDist)) {
 }
 
 // 404 handler for API
-app.use("/api/*", (_req, res) => {
+app.use(/^\/api\/(.*)/, (_req, res) => {
   res.status(404).json({ error: "Endpoint not found" });
 });
 
