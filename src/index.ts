@@ -1063,6 +1063,7 @@ async function viewHistory() {
           message: "Làm gì tiếp theo?",
           choices: [
             { name: "📋  Copy prompts vào clipboard", value: "copy" },
+            { name: "💾  Xuất ra file txt", value: "export" },
             { name: "⏮️  Quay lại", value: "back" },
           ],
         },
