@@ -7,6 +7,14 @@ import {
   buildTrendResearcherUserPrompt,
 } from "../prompts/trend-researcher";
 import { getSourceLabel, getRandomSource } from "../services/trends-api";
+import {
+  boxHeader,
+  sectionHeader,
+  quoteBox,
+  field,
+  infoBlock,
+  divider,
+} from "../utils/ui-helpers";
 
 export class AutonomousTrendScanner {
   /**
@@ -157,19 +165,34 @@ export class AutonomousTrendScanner {
    * Display the trend brief in a compact format
    */
   private displayBrief(brief: TrendBrief): void {
-    console.log(chalk.bold.cyan("\n📊 TREND BRIEF"));
-    console.log(chalk.cyan("─".repeat(50)));
-    console.log(chalk.white(`🏆 ${brief.product.name}`));
-    console.log(
-      chalk.gray(
-        `   👁️  ${brief.product.views} · 📈 ${brief.product.trendPercent} · 💰 ${brief.product.price}`,
-      ),
-    );
-    console.log(chalk.white(`🎣 Hook: ${brief.hook}`));
-    console.log(chalk.white(`💡 Angle: ${brief.angle}`));
-    console.log(chalk.white(`🎯 Pain point: ${brief.painPoint}`));
-    console.log(chalk.white(`#️⃣  Hashtags: ${brief.hashtags.join(" ")}`));
-    console.log(chalk.white(`📢 CTA: ${brief.ctaAngle}`));
-    console.log(chalk.cyan("─".repeat(50)));
+    let out = "";
+
+    out += boxHeader("🔍 TREND BRIEF", chalk.magenta);
+    out += field("🏆 Sản phẩm:", brief.product.name, chalk.white.bold);
+    out += "\n";
+    out += infoBlock("👁️", "Views:", brief.product.views);
+    out += infoBlock("📈", "Trend:", brief.product.trendPercent);
+    out += infoBlock("💰", "Giá:", brief.product.price);
+
+    out += divider();
+
+    out += sectionHeader("HOOK", "🎣");
+    out += quoteBox(brief.hook, chalk.yellow);
+
+    out += sectionHeader("GÓC TIẾP CẬN", "💡");
+    out += `  ${chalk.white(brief.angle)}\n\n`;
+
+    out += sectionHeader("PAIN POINT", "🎯");
+    out += `  ${chalk.white(brief.painPoint)}\n\n`;
+
+    out += sectionHeader("HASHTAGS", "🏷️");
+    const hashTags = brief.hashtags.map((t) => chalk.green(t)).join(" ");
+    out += `\n  ${hashTags}\n\n`;
+
+    out += sectionHeader("CTA", "📢");
+    out += `  ${chalk.white(brief.ctaAngle)}\n\n`;
+    out += divider();
+
+    console.log(out);
   }
 }

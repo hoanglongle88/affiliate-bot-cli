@@ -1,0 +1,14 @@
+{
+  "totalCalls": 1,
+  "byProvider": {
+    "ollama": 0,
+    "gemini": 1
+  },
+  "byFeature": {
+    "trend_research": 0,
+    "video_script": 1,
+    "marketing_caption": 0,
+    "image_brief": 0
+  },
+  "lastReset": "2026-04-08T04:05:05.795Z"
+}

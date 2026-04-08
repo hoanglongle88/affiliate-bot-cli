@@ -6,6 +6,14 @@ import {
   ImagePromptInput,
   ImagePromptOutput,
 } from "../prompts/image-creator";
+import {
+  boxHeader,
+  sectionHeader,
+  quoteBox,
+  field,
+  infoBlock,
+  divider,
+} from "../utils/ui-helpers";
 
 const DEFAULT_BRIEF: ImagePromptOutput = {
   adFormat: "feed-square",
@@ -66,24 +74,31 @@ export class ImageCreatorAgent {
   }
 
   displayBrief(brief: ImagePromptOutput): void {
-    console.log(
-      chalk.bold.cyan("\n📸 CREATIVE BRIEF — Ảnh quảng cáo sản phẩm"),
+    let out = "";
+
+    out += boxHeader("🎨 CREATIVE BRIEF — ẢNH QUẢNG CÁO", chalk.blue);
+    out += infoBlock("🎬", "Format:", brief.adFormat);
+    out += infoBlock("🎨", "Visual style:", brief.visualStyle);
+
+    out += divider();
+    out += chalk.bold.cyan("🎨 Bảng màu đề xuất:\n");
+    brief.colorPalette.forEach(
+      (c) => (out += chalk.white(`  ${c} `) + chalk.gray("████") + "\n"),
     );
-    console.log(chalk.cyan("─".repeat(50)));
 
-    console.log(chalk.bold("\n🎬 Format: ") + brief.adFormat);
-    console.log(chalk.bold("🎨 Visual style: ") + brief.visualStyle);
+    out += sectionHeader("3 IMAGE PROMPTS", "📝");
+    out += chalk.green.bold("  1️⃣  SAFE:\n");
+    out += quoteBox(brief.prompts.safe, chalk.green);
+    out += chalk.green.bold("\n  2️⃣  BOLD:\n");
+    out += quoteBox(brief.prompts.bold, chalk.yellow);
+    out += chalk.green.bold("\n  3️⃣  LIFESTYLE:\n");
+    out += quoteBox(brief.prompts.lifestyle, chalk.cyan);
 
-    console.log(chalk.bold("\n🎨 Bảng màu đề xuất:"));
-    brief.colorPalette.forEach((c) => console.log(chalk.white(`   ${c} ████`)));
+    out += divider();
+    out += infoBlock("🚫", "Negative:", brief.negativePrompt);
+    out += infoBlock("📸", "Shooting:", brief.shootingNotes);
+    out += divider();
 
-    console.log(chalk.bold("\n📝 3 Image Prompts:"));
-    console.log(chalk.green("   1️⃣  SAFE: ") + brief.prompts.safe);
-    console.log(chalk.green("   2️⃣  BOLD: ") + brief.prompts.bold);
-    console.log(chalk.green("   3️⃣  LIFESTYLE: ") + brief.prompts.lifestyle);
-
-    console.log(chalk.bold("\n🚫 Negative: ") + brief.negativePrompt);
-    console.log(chalk.bold("\n📸 Shooting notes: ") + brief.shootingNotes);
-    console.log(chalk.cyan("─".repeat(50) + "\n"));
+    console.log(out);
   }
 }
