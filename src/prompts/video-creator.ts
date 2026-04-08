@@ -54,16 +54,43 @@ export function buildVideoCreatorUserPrompt(
       "Chuyên nghiệp, tin cậy, xoáy sâu vào cam kết chất lượng và ưu đãi mua ngay tại bài viết.",
   };
 
+  let productDetail = product.description?.trim();
+  if (
+    !productDetail ||
+    productDetail === "Chưa có" ||
+    productDetail.length < 10
+  ) {
+    productDetail = `(Không có mô tả chi tiết — HÃY PHÂN TÍCH kỹ các từ khóa kỹ thuật, mã model, công nghệ có trong tên "${product.name}" để suy ra lợi ích chính cho người dùng)`;
+  } else {
+    productDetail = productDetail.substring(0, 450);
+  }
+
+  // 2. Xử lý USP: Ưu tiên sự độc đáo
+  let usp = product.usp?.trim();
+  if (!usp || usp === "Chưa có" || usp.length < 5) {
+    usp = `(Tự xác định điểm bán hàng "đắt giá" nhất dựa trên thông số kỹ thuật)`;
+  }
+
+  // 3. Xử lý Social Proof: Tập trung vào con số thực tế (Lượt bán/Đánh giá)
+  const socialProof =
+    product.sold !== "Chưa có" && product.sold !== "0"
+      ? `Đã có ${product.sold} lượt bán thành công, đạt ${product.rating || "5"}/5 sao.`
+      : `Sản phẩm đang cực hot với đánh giá ${product.rating || "5"}/5 sao.`;
+
   return `Hãy viết kịch bản video bán hàng chuyên nghiệp cho ${platform.toUpperCase()}.
 
 [Ngữ cảnh nền tảng]: ${platformContexts[platform]}
 
-[Thông tin sản phẩm]:
+[Dữ liệu sản phẩm]:
 - Tên: ${product.name}
 - Giá bán: ${product.price || "Cực ưu đãi"}
-- Uy tín: ${product.sold} lượt bán, ${product.rating}/5 sao.
-- Điểm khác biệt (USP): ${product.usp || "Chất lượng vượt trội so với đối thủ"}
-- Chi tiết mô tả: ${product.description.substring(0, 450)}
+- Uy tín: ${socialProof}
+- Điểm khác biệt (USP): ${usp}
+- Chi tiết mô tả: ${productDetail}
 
-Yêu cầu: Kịch bản phải có nhịp điệu dồn dập, kích thích người xem phải hành động ngay lập tức để không bỏ lỡ cơ hội.`;
+[Yêu cầu kịch bản]:
+- Bóc tách các từ khóa như: "Wireless", "Mechanical", "GaN5", "PD 20W", "Rapid Trigger"... để biến chúng thành lý do khách hàng phải mua.
+- Không nhắc đến tên bất kỳ cửa hàng nào.
+- Tập trung vào trải nghiệm người dùng: "Cảm giác cầm nắm", "Tốc độ sạc", "Độ bền".
+- Kịch bản nhịp điệu nhanh, dứt khoát, kích thích hành động ngay.`;
 }
