@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
-import { Package, FileText, MessageSquare, TrendingUp } from "lucide-react";
+import {
+  Package,
+  FileText,
+  MessageSquare,
+  TrendingUp,
+  AlertCircle,
+} from "lucide-react";
 import { getProducts, getHistory, checkHealth } from "../lib/api";
-import type { HistoryEntry } from "../interfaces";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -11,6 +16,7 @@ export default function Dashboard() {
     trends: 0,
   });
   const [status, setStatus] = useState<string>("đang kiểm tra...");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -19,23 +25,20 @@ export default function Dashboard() {
           getProducts(),
           getHistory(),
         ]);
-        const scripts = history.filter(
-          (h: HistoryEntry) => h.workflow === "script",
-        ).length;
+        const scripts = history.filter((h) => h.workflow === "script").length;
         const captions = history.filter(
-          (h: HistoryEntry) => h.workflow === "description",
+          (h) => h.workflow === "description",
         ).length;
-        const trends = history.filter(
-          (h: HistoryEntry) => h.workflow === "trend",
-        ).length;
+        const trends = history.filter((h) => h.workflow === "trend").length;
         setStats({
           products: productsRes.products.length,
           scripts,
           captions,
           trends,
         });
-      } catch {
-        setStats({ products: 0, scripts: 0, captions: 0, trends: 0 });
+        setError(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Không thể tải dữ liệu");
       }
     };
     load();
@@ -74,6 +77,20 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
+      {error && (
+        <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-3">
+          <AlertCircle className="text-red-400 shrink-0" size={20} />
+          <div>
+            <p className="font-medium text-sm text-red-400">
+              Không thể tải dữ liệu
+            </p>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              {error}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl font-bold">Tổng quan</h2>
         <span

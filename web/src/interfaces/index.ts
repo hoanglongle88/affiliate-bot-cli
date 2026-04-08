@@ -54,7 +54,12 @@ export interface HistoryEntry {
 
 export interface TrendBriefResult {
   brief: {
-    product: { name: string; price: string; views: string; trendPercent: string };
+    product: {
+      name: string;
+      price: string;
+      views: string;
+      trendPercent: string;
+    };
     hook: string;
     angle: string;
     painPoint: string;
@@ -92,12 +97,22 @@ export interface ImageBriefResult {
   shootingNotes: string;
 }
 
+export interface HistoryResponse {
+  history: HistoryEntry[];
+  total: number;
+}
+
 export interface HealthResponse {
   status: string;
   timestamp: string;
   uptime: number;
 }
 
-export type Platform = 'tiktok' | 'youtube' | 'facebook_reels' | 'instagram_reels' | 'facebook_ads';
-export type AdPlatform = 'facebook' | 'tiktok' | 'shopee' | 'lazada';
-export type AspectRatio = '1:1' | '9:16' | '16:9';
+export type Platform =
+  | "tiktok"
+  | "youtube"
+  | "facebook_reels"
+  | "instagram_reels"
+  | "facebook_ads";
+export type AdPlatform = "facebook" | "tiktok" | "shopee" | "lazada";
+export type AspectRatio = "1:1" | "9:16" | "16:9";

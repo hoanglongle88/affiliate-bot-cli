@@ -1,7 +1,7 @@
 import axios from "axios";
 import type {
   ProductsResponse,
-  HistoryEntry,
+  HistoryResponse,
   HealthResponse,
   ShortVideoResult,
   ImageBriefResult,
@@ -148,7 +148,7 @@ export const scanTrend = (data: { nicheId?: string }) =>
 
 // History
 export const getHistory = () =>
-  api.get<HistoryEntry[]>("/history").then((r) => r.data);
+  api.get<HistoryResponse>("/history").then((r) => r.data.history);
 
 // Health
 export const checkHealth = () =>
