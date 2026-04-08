@@ -40,7 +40,7 @@ function ProductsContent() {
   const [submitting, setSubmitting] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 10;
 
   const load = useCallback(async (searchQuery?: string, pageNum?: number) => {
     setLoading(true);
