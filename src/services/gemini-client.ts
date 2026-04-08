@@ -16,12 +16,33 @@ export async function callGemini(
   const selectedModel = model || process.env.GEMINI_MODEL || "gemini-2.0-flash";
   const ai = new GoogleGenAI({ apiKey });
 
-  const response = await ai.models.generateContent({
-    model: selectedModel,
-    contents: [{ text: systemPrompt }, { text: "\n\n" }, { text: userPrompt }],
-  });
+  try {
+    const response = await ai.models.generateContent({
+      model: selectedModel,
+      contents: [
+        { text: systemPrompt },
+        { text: "\n\n" },
+        { text: userPrompt },
+      ],
+    });
 
-  return response.text?.trim() || "";
+    return response.text?.trim() || "";
+  } catch (error: any) {
+    // Handle quota exceeded (429)
+    if (error.status === 429 || error.code === 429) {
+      throw new Error(
+        "Gemini API đã hết quota (429 RESOURCE_EXHAUSTED). " +
+          "Vui lòng kiểm tra lại billing tại https://aistudio.google.com hoặc chuyển sang dùng Ollama.",
+      );
+    }
+
+    // Handle other API errors
+    if (error.message) {
+      throw new Error(`Gemini API lỗi: ${error.message}`);
+    }
+
+    throw new Error("Gemini API lỗi không xác định");
+  }
 }
 
 export async function checkGeminiConnection(): Promise<boolean> {
@@ -30,7 +51,14 @@ export async function checkGeminiConnection(): Promise<boolean> {
     if (!apiKey) return false;
 
     const ai = new GoogleGenAI({ apiKey });
-    await ai.models.list();
+
+    // Test actual generateContent instead of models.list()
+    // because models.list() can succeed even when quota is exhausted
+    await ai.models.generateContent({
+      model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+      contents: [{ text: "hi" }],
+    });
+
     return true;
   } catch {
     return false;

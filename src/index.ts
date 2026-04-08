@@ -53,6 +53,9 @@ import {
   saveTrendBrief,
   saveImageBrief,
   saveShortVideoPrompt,
+  listCSVFiles,
+  parseCSVProducts,
+  importCSVProducts,
 } from "./data/storage";
 import { TTSService } from "./services/tts-service";
 import { getUsage, resetUsage } from "./services/usage-tracker";
@@ -852,6 +855,106 @@ async function generateShortVideoFlow() {
       return;
     }
   }
+}
+
+// ── CSV Import Flow ──
+
+async function importCSVFlow() {
+  console.log(
+    chalk.bold.cyan("\n╔══════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    chalk.bold.cyan("║   📥  IMPORT CSV - Nhập sản phẩm hàng loạt        ║"),
+  );
+  console.log(
+    chalk.bold.cyan("║       Từ file CSV Shopee Affiliate                ║"),
+  );
+  console.log(
+    chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
+  );
+
+  const csvFiles = listCSVFiles();
+
+  if (csvFiles.length === 0) {
+    console.log(
+      chalk.yellow("\n📭 Không tìm thấy file CSV nào trong thư mục data/\n"),
+    );
+    console.log(
+      chalk.gray("💡 Mẹo: Đặt file CSV vào thư mục data/ rồi chạy lại.\n"),
+    );
+    return;
+  }
+
+  const fileChoices = csvFiles.map((f) => ({
+    name: `${f.name}`,
+    value: f.path,
+  }));
+
+  const { selectedFile } = await inquirer.prompt([
+    {
+      type: "rawlist",
+      name: "selectedFile",
+      message: "📄 Chọn file CSV để import:",
+      choices: fileChoices,
+    },
+  ]);
+
+  // Parse CSV
+  console.log(
+    chalk.yellow(`\n📖 Đang đọc file: ${selectedFile.split("/").pop()}...\n`),
+  );
+  const products = parseCSVProducts(selectedFile);
+
+  if (products.length === 0) {
+    console.log(
+      chalk.yellow("\n⚠️  Không tìm thấy sản phẩm nào trong file CSV.\n"),
+    );
+    return;
+  }
+
+  // Preview products
+  console.log(chalk.bold.cyan(`✅ Tìm thấy ${products.length} sản phẩm:\n`));
+  products.slice(0, 10).forEach((p, i) => {
+    console.log(chalk.gray(`  ${i + 1}. ${p.name}`));
+    console.log(chalk.gray(`     💰 ${p.price} | 🔥 Đã bán: ${p.sold}`));
+  });
+  if (products.length > 10) {
+    console.log(chalk.gray(`  ... và ${products.length - 10} sản phẩm khác\n`));
+  }
+
+  // Confirm import
+  const { confirm } = await inquirer.prompt([
+    {
+      type: "confirm",
+      name: "confirm",
+      message: `⚠️  Nhập ${products.length} sản phẩm vào database? (Sản phẩm trùng tên sẽ được cập nhật)`,
+      default: false,
+    },
+  ]);
+
+  if (!confirm) {
+    console.log(chalk.yellow("\n❌ Đã hủy import.\n"));
+    return;
+  }
+
+  // Import
+  console.log(chalk.yellow("\n🚀 Đang import sản phẩm...\n"));
+  const result = await importCSVProducts(products);
+
+  console.log(chalk.bold.cyan("\n═".repeat(50)));
+  console.log(chalk.bold.green(`✅ Import hoàn tất!`));
+  console.log(chalk.bold.green(`   Thành công: ${result.success} sản phẩm`));
+  if (result.skipped > 0) {
+    console.log(chalk.yellow(`   Bỏ qua: ${result.skipped} sản phẩm`));
+  }
+  if (result.errors.length > 0) {
+    console.log(chalk.red(`   Lỗi: ${result.errors.length}`));
+    result.errors
+      .slice(0, 5)
+      .forEach((e) => console.log(chalk.red(`   - ${e}`)));
+  }
+  console.log(chalk.bold.cyan("═".repeat(50)));
+  console.log("");
 }
 
 // ── History Viewer (Product-centric) ──
@@ -1763,6 +1866,10 @@ async function askMainMenu(): Promise<string> {
         },
         { name: "[History] - Xem & quản lý nội dung đã tạo", value: "history" },
         { name: "[Products] - Xem & quản lý sản phẩm", value: "products" },
+        {
+          name: "[Import CSV] - Nhập sản phẩm từ file CSV",
+          value: "importcsv",
+        },
         new inquirer.Separator(" ⚙️ Hệ thống "),
         { name: "[System] - Kiểm tra kết nối AI providers", value: "check" },
         { name: "[Usage] - Xem thống kê sử dụng AI", value: "usage" },
@@ -1819,6 +1926,8 @@ async function mainLoop() {
       await viewHistory();
     } else if (action === "products") {
       await manageProducts();
+    } else if (action === "importcsv") {
+      await importCSVFlow();
     }
   }
 }

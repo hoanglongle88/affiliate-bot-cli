@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { parse } from "csv-parse/sync";
 import {
   ProductInfo,
   GeneratedContent,
@@ -642,6 +643,85 @@ export async function deleteImageBrief(id: string): Promise<boolean> {
 
 export async function deleteAllImageBriefs(): Promise<void> {
   await supabase.from("image_briefs").delete().neq("id", "");
+}
+
+// ═══════════════════════════════════════════════════════════
+// CSV IMPORT
+// ═══════════════════════════════════════════════════════════
+
+export interface CSVProduct {
+  name: string;
+  price: string;
+  sold: string;
+}
+
+/**
+ * List all CSV files in data/ directory
+ */
+export function listCSVFiles(): { name: string; path: string }[] {
+  const dataDir = path.join(process.cwd(), "data");
+  if (!fs.existsSync(dataDir)) return [];
+
+  return fs
+    .readdirSync(dataDir)
+    .filter((f) => f.endsWith(".csv"))
+    .map((f) => ({ name: f, path: path.join(dataDir, f) }));
+}
+
+/**
+ * Parse CSV file and return extracted products (name, price, sold only)
+ */
+export function parseCSVProducts(filePath: string): CSVProduct[] {
+  const content = fs.readFileSync(filePath, "utf-8");
+
+  const records = parse(content, {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+  });
+
+  const products: CSVProduct[] = [];
+
+  for (const row of records as any[]) {
+    // Extract only: name, price, doanh thu (sold)
+    const name = row["Tên sản phẩm"]?.trim();
+    if (!name) continue;
+
+    const price = row["Giá"]?.trim() || "Chưa có";
+    const sold = row["Doanh thu"]?.trim() || "Chưa có";
+
+    products.push({ name, price, sold });
+  }
+
+  return products;
+}
+
+/**
+ * Import CSV products into Supabase
+ */
+export async function importCSVProducts(
+  products: CSVProduct[],
+): Promise<{ success: number; skipped: number; errors: string[] }> {
+  let success = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (const product of products) {
+    try {
+      await saveProduct({
+        name: product.name,
+        price: product.price,
+        rating: "Chưa có",
+        sold: product.sold,
+        description: product.name,
+      });
+      success++;
+    } catch (err: any) {
+      errors.push(`${product.name}: ${err.message}`);
+    }
+  }
+
+  return { success, skipped, errors };
 }
 
 // ═══════════════════════════════════════════════════════════
