@@ -21,6 +21,8 @@ import captionsRouter from "./api/routes/captions";
 import productsRouter from "./api/routes/products";
 import trendsRouter from "./api/routes/trends";
 import historyRouter from "./api/routes/history";
+import shortRouter from "./api/routes/short";
+import imageRouter from "./api/routes/image";
 
 const app = express();
 
@@ -43,6 +45,8 @@ app.use("/api/captions", captionsRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/trends", trendsRouter);
 app.use("/api/history", historyRouter);
+app.use("/api/short", shortRouter);
+app.use("/api/image", imageRouter);
 
 // Serve web dashboard in production
 const webDist = path.join(__dirname, "../web/dist");
