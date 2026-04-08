@@ -9,6 +9,9 @@ import {
   Server,
   Menu,
   X,
+  TrendingUp,
+  Film,
+  Image,
 } from "lucide-react";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
@@ -16,12 +19,18 @@ import Scripts from "./pages/Scripts";
 import Captions from "./pages/Captions";
 import HistoryPage from "./pages/HistoryPage";
 import ServerStatus from "./pages/ServerStatus";
+import TrendResearcher from "./pages/TrendResearcher";
+import ShortCreator from "./pages/ShortCreator";
+import ImageCreator from "./pages/ImageCreator";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Tổng quan" },
   { to: "/products", icon: Package, label: "Sản phẩm" },
+  { to: "/trend", icon: TrendingUp, label: "Quét Trend" },
   { to: "/scripts", icon: FileText, label: "Kịch bản" },
   { to: "/captions", icon: MessageSquare, label: "Caption" },
+  { to: "/short", icon: Film, label: "Video Veo" },
+  { to: "/image", icon: Image, label: "Brief Ảnh" },
   { to: "/history", icon: History, label: "Lịch sử" },
   { to: "/server", icon: Server, label: "Máy chủ" },
 ];
@@ -107,8 +116,11 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/products" element={<Products />} />
+              <Route path="/trend" element={<TrendResearcher />} />
               <Route path="/scripts" element={<Scripts />} />
               <Route path="/captions" element={<Captions />} />
+              <Route path="/short" element={<ShortCreator />} />
+              <Route path="/image" element={<ImageCreator />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/server" element={<ServerStatus />} />
             </Routes>
