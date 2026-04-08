@@ -416,7 +416,7 @@ async function pickScriptFromList(
 async function handlePostActions(
   type: "script" | "description",
   content: GeneratedContent,
-): Promise<"back" | "menu"> {
+): Promise<"back" | "menu" | "exit"> {
   while (true) {
     const choices = [
       { name: "📋  Copy vào clipboard", value: "copy" },
@@ -425,6 +425,7 @@ async function handlePostActions(
       { name: "🔄  Tạo lại (regenerate)", value: "regenerate" },
       { name: "⏮️  Quay lại bước trước", value: "back" },
       { name: "⏭️  Về menu chính", value: "menu" },
+      { name: "❌  Thoát", value: "exit" },
     ];
 
     const { action } = await inquirer.prompt([
@@ -438,6 +439,10 @@ async function handlePostActions(
 
     if (action === "menu") return "menu";
     if (action === "back") return "back";
+    if (action === "exit") {
+      console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+      process.exit(0);
+    }
 
     if (action === "copy") {
       const text =
@@ -504,7 +509,7 @@ async function handlePostActions(
       } else if (type === "description") {
         await generateDescriptionFlow();
       }
-      return "menu";
+      return "exit";
     }
   }
 }
@@ -739,11 +744,16 @@ async function generateImageBriefFlow() {
           { name: "📋  Copy prompts vào clipboard", value: "copy" },
           { name: "💾  Xuất brief ra file txt", value: "export" },
           { name: "🔄  Tạo lại brief khác", value: "regenerate" },
-          { name: "⏭️  Về menu chính", value: "menu" },
+          { name: "⏮️  Quay lại menu chính", value: "menu" },
+          { name: "❌  Thoát", value: "exit" },
         ],
       },
     ]);
 
+    if (action === "exit") {
+      console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+      process.exit(0);
+    }
     if (action === "menu") return;
 
     if (action === "copy") {
@@ -867,11 +877,16 @@ async function generateShortVideoFlow() {
         choices: [
           { name: "📋  Copy full prompt vào clipboard", value: "copy" },
           { name: "🔄  Tạo lại prompt khác", value: "regenerate" },
-          { name: "⏭️  Về menu chính", value: "menu" },
+          { name: "⏮️  Quay lại menu chính", value: "menu" },
+          { name: "❌  Thoát", value: "exit" },
         ],
       },
     ]);
 
+    if (action === "exit") {
+      console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+      process.exit(0);
+    }
     if (action === "menu") return;
 
     if (action === "copy") {
@@ -1651,11 +1666,16 @@ async function generateTrendScanFlow() {
           { name: "🎬  Tạo kịch bản video từ sản phẩm này", value: "script" },
           { name: "✍️  Tạo mô tả bài đăng", value: "description" },
           { name: "🔍  Scan niche khác", value: "rescan" },
-          { name: "⏭️  Quay lại menu chính", value: "menu" },
+          { name: "⏮️  Quay lại menu chính", value: "menu" },
+          { name: "❌  Thoát", value: "exit" },
         ],
       },
     ]);
 
+    if (action === "exit") {
+      console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+      process.exit(0);
+    }
     if (action === "menu") return;
 
     if (action === "rescan") {
