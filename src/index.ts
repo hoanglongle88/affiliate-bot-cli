@@ -41,6 +41,7 @@ import {
   saveVideoScript,
   savePostDescription,
   saveTrendBrief,
+  saveImageBrief,
 } from "./data/storage";
 import { TTSService } from "./services/tts-service";
 import { getUsage, resetUsage } from "./services/usage-tracker";
@@ -638,6 +639,26 @@ async function generateImageBriefFlow() {
   const agent = new ImageCreatorAgent();
   const brief = await agent.generateBrief(input);
   agent.displayBrief(brief);
+
+  // Save image brief to DB
+  const briefToSave = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    productId,
+    adPlatform: input.adPlatform,
+    aspectRatio: input.aspectRatio,
+    adFormat: brief.adFormat,
+    visualStyle: brief.visualStyle,
+    colorPalette: brief.colorPalette,
+    promptSafe: brief.prompts.safe,
+    promptBold: brief.prompts.bold,
+    promptLifestyle: brief.prompts.lifestyle,
+    negativePrompt: brief.negativePrompt,
+    shootingNotes: brief.shootingNotes,
+    createdAt: new Date().toISOString(),
+  };
+  await saveImageBrief(briefToSave);
+  await saveToHistoryWithRefs(productId, null, null, "image_brief");
+  console.log(chalk.green("💾 Đã lưu image brief vào database!\n"));
 
   while (true) {
     const { action } = await inquirer.prompt([
