@@ -102,7 +102,15 @@ export async function saveProduct(product: ProductInfo): Promise<SavedProduct> {
   };
   if (saved.usp) insertData.usp = saved.usp;
 
-  await supabase.from("products").insert(insertData);
+  const { error: insertError } = await supabase
+    .from("products")
+    .insert(insertData);
+
+  // If usp column doesn't exist, retry without it
+  if (insertError?.message?.includes("usp")) {
+    delete insertData.usp;
+    await supabase.from("products").insert(insertData);
+  }
 
   return saved;
 }
@@ -118,28 +126,57 @@ export async function updateProductById(
   if (product.price !== undefined) updateData.price = product.price;
   if (product.rating !== undefined) updateData.rating = product.rating;
   if (product.sold !== undefined) updateData.sold = product.sold;
+  // Only include usp if explicitly provided (column may not exist in older schemas)
   if (product.usp !== undefined) updateData.usp = product.usp;
 
-  const { data, error } = await supabase
-    .from("products")
-    .update(updateData)
-    .eq("id", id)
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("products")
+      .update(updateData)
+      .eq("id", id)
+      .select()
+      .single();
 
-  if (error || !data) return undefined;
+    if (error || !data) return undefined;
 
-  return {
-    id: data.id,
-    name: data.name,
-    description: data.description,
-    price: data.price,
-    rating: data.rating,
-    sold: data.sold,
-    usp: data.usp,
-    createdAt: data.created_at,
-    usageCount: data.usage_count,
-  };
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      rating: data.rating,
+      sold: data.sold,
+      usp: data.usp,
+      createdAt: data.created_at,
+      usageCount: data.usage_count,
+    };
+  } catch {
+    // Fallback: retry without usp column (for older schemas)
+    if (updateData.usp !== undefined) {
+      delete updateData.usp;
+      const { data, error } = await supabase
+        .from("products")
+        .update(updateData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error || !data) return undefined;
+
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        rating: data.rating,
+        sold: data.sold,
+        usp: undefined,
+        createdAt: data.created_at,
+        usageCount: data.usage_count,
+      };
+    }
+    return undefined;
+  }
 }
 
 export async function getProducts(
