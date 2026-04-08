@@ -1676,9 +1676,17 @@ async function generateTrendScanFlow() {
       choices: [
         { name: "🤖  Tự động hoàn toàn (AI chọn niche)", value: "auto" },
         { name: "🎯  Chọn niche cụ thể", value: "manual" },
+        { name: "⏮️  Quay lại menu chính", value: "menu" },
+        { name: "❌  Thoát", value: "exit" },
       ],
     },
   ]);
+
+  if (mode === "exit") {
+    console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+    process.exit(0);
+  }
+  if (mode === "menu") return;
 
   let niche = undefined;
   if (mode === "manual") {
@@ -1687,12 +1695,18 @@ async function generateTrendScanFlow() {
         type: "rawlist",
         name: "selectedNiche",
         message: "📂 Chọn ngách:",
-        choices: NICHES.map((n) => ({
-          name: `${n.name}`,
-          value: n.id,
-        })),
+        choices: [
+          ...NICHES.map((n) => ({
+            name: `${n.name}`,
+            value: n.id,
+          })),
+          { name: "⏮️  Quay lại menu chính", value: "menu" },
+        ],
       },
     ]);
+
+    if (selectedNiche === "menu") return;
+
     niche = getNicheById(selectedNiche);
   }
 
