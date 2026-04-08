@@ -64,42 +64,50 @@ import fs from "fs";
 
 // ── Product Input ──
 
-async function selectOrEnterProduct(): Promise<{
-  product: ProductInfo;
-  productId: string | null;
-}> {
+async function selectOrEnterProduct(
+  showAll: boolean = false,
+): Promise<{ product: ProductInfo; productId: string | null }> {
   const products = await getProducts();
 
   if (products.length === 0) {
     const newProduct = await enterProduct();
-    // Look up the saved product to get ID
     const allProducts = await getProducts();
     const found = allProducts.find((p) => p.name === newProduct.name);
     return { product: newProduct, productId: found ? found.id : null };
   }
+
+  const displayCount = showAll ? products.length : Math.min(products.length, 5);
+  const choices = products.slice(0, displayCount).map((p, i) => ({
+    name: `${i + 1}. ${p.name} (đã dùng ${p.usageCount} lần)`,
+    value: `use_${p.id}`,
+  }));
+
+  if (!showAll && products.length > 5) {
+    choices.push({
+      name: `6. ... Xem thêm (${products.length - 5} sản phẩm khác)`,
+      value: "more",
+    });
+  }
+  choices.push({
+    name: `${displayCount + 1}. 🆕 Nhập sản phẩm mới`,
+    value: "new",
+  });
 
   const { action } = await inquirer.prompt([
     {
       type: "rawlist",
       name: "action",
       message: "📦 Chọn sản phẩm:",
-      choices: [
-        ...products.slice(0, 5).map((p, i) => ({
-          name: `${i + 1}. ${p.name} (đã dùng ${p.usageCount} lần)`,
-          value: `use_${p.id}`,
-        })),
-        ...(products.length > 5
-          ? [{ name: "6. ... Xem thêm", value: "more" }]
-          : []),
-        {
-          name: `${products.length > 5 ? 6 : products.length + 1}. 🆕 Nhập sản phẩm mới`,
-          value: "new",
-        },
-      ],
+      choices,
     },
   ]);
 
-  if (action === "new" || action === "more") {
+  if (action === "more") {
+    // Show full list
+    return selectOrEnterProduct(true);
+  }
+
+  if (action === "new") {
     const newProduct = await enterProduct();
     const allProducts = await getProducts();
     const found = allProducts.find((p) => p.name === newProduct.name);
