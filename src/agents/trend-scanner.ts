@@ -7,7 +7,7 @@ import {
   buildTrendResearcherUserPrompt,
 } from "../prompts/trend-researcher";
 import { getSourceLabel, getRandomSource } from "../services/trends-api";
-import { saveProduct } from "../data/storage";
+import { saveProduct, saveTrendBrief } from "../data/storage";
 
 export class AutonomousTrendScanner {
   /**
@@ -16,7 +16,11 @@ export class AutonomousTrendScanner {
    */
   async scanAndGenerate(
     niche?: NicheConfig,
-  ): Promise<{ brief: TrendBrief; product: ProductInfo }> {
+  ): Promise<{
+    brief: TrendBrief;
+    product: ProductInfo;
+    trendBriefId: string;
+  }> {
     // 1. Pick source & niche
     const source = getRandomSource();
     const selectedNiche = niche || getRandomNiche();
@@ -41,10 +45,14 @@ export class AutonomousTrendScanner {
       description: brief.product.description,
     };
 
-    await saveProduct(product);
+    const savedProduct = await saveProduct(product);
     console.log(
       chalk.green(`\n💾 Đã lưu sản phẩm "${product.name}" để dùng lại!\n`),
     );
+
+    // 5. Lưu trend brief để tái sử dụng
+    const savedBrief = await saveTrendBrief(brief, savedProduct.id);
+    console.log(chalk.green(`💾 Đã lưu trend brief "${brief.hook}"!\n`));
 
     console.log(
       chalk.cyan("🎉 Research hoàn tất! Bạn có thể dùng sản phẩm này để:\n"),
@@ -52,7 +60,7 @@ export class AutonomousTrendScanner {
     console.log(chalk.gray("   → Tạo kịch bản video (Video Creator)"));
     console.log(chalk.gray("   → Tạo mô tả bài đăng (Marketing Writer)\n"));
 
-    return { brief, product };
+    return { brief, product, trendBriefId: savedBrief.id };
   }
 
   /**

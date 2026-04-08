@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { ProductInfo, VideoScript, Platform } from "../types/content";
 import { callAI } from "../services/ai-orchestrator";
+import { saveVideoScript } from "../data/storage";
 import {
   VIDEO_CREATOR_SYSTEM_PROMPT,
   buildVideoCreatorUserPrompt,
@@ -10,7 +11,8 @@ export class VideoCreatorAgent {
   async generateScript(
     product: ProductInfo,
     platform: Platform,
-  ): Promise<VideoScript> {
+    productId: string | null = null,
+  ): Promise<{ script: VideoScript; savedId: string }> {
     const userPrompt = buildVideoCreatorUserPrompt(product, platform);
 
     const startTime = Date.now();
@@ -29,7 +31,12 @@ export class VideoCreatorAgent {
     clearInterval(loadingInterval);
     process.stdout.write("\r" + " ".repeat(50) + "\r");
 
-    return this.parseResponse(response, platform, product.name);
+    const script = this.parseResponse(response, platform, product.name);
+
+    // Self-save to storage
+    const saved = await saveVideoScript(script, productId, { raw: response });
+
+    return { script, savedId: saved.id };
   }
 
   private parseResponse(

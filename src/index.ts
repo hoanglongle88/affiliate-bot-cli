@@ -9,6 +9,7 @@ import {
   GeneratedContent,
   VideoScript,
   PostDescription,
+  SavedVideoScript,
 } from "./types/content";
 import { VideoCreatorAgent } from "./agents/video-creator";
 import { MarketingWriterAgent } from "./agents/marketing-writer";
@@ -28,6 +29,7 @@ import {
   saveProduct,
   getProducts,
   saveToHistory,
+  saveToHistoryWithRefs,
   getHistory,
   deleteHistoryEntry,
   clearHistory,
@@ -35,6 +37,7 @@ import {
   deleteProduct,
   deleteAllProducts,
   exportToTextFile,
+  getVideoScripts,
 } from "./data/storage";
 import { TTSService } from "./services/tts-service";
 import { getUsage, resetUsage } from "./services/usage-tracker";
@@ -43,11 +46,18 @@ import fs from "fs";
 
 // ── Product Input ──
 
-async function selectOrEnterProduct(): Promise<ProductInfo> {
+async function selectOrEnterProduct(): Promise<{
+  product: ProductInfo;
+  productId: string | null;
+}> {
   const products = await getProducts();
 
   if (products.length === 0) {
-    return await enterProduct();
+    const newProduct = await enterProduct();
+    // Look up the saved product to get ID
+    const allProducts = await getProducts();
+    const found = allProducts.find((p) => p.name === newProduct.name);
+    return { product: newProduct, productId: found ? found.id : null };
   }
 
   const { action } = await inquirer.prompt([
@@ -72,7 +82,10 @@ async function selectOrEnterProduct(): Promise<ProductInfo> {
   ]);
 
   if (action === "new" || action === "more") {
-    return await enterProduct();
+    const newProduct = await enterProduct();
+    const allProducts = await getProducts();
+    const found = allProducts.find((p) => p.name === newProduct.name);
+    return { product: newProduct, productId: found ? found.id : null };
   }
 
   const productId = action.replace("use_", "");
@@ -81,15 +94,21 @@ async function selectOrEnterProduct(): Promise<ProductInfo> {
   if (product) {
     console.log(chalk.green(`\n✅ Đã chọn: ${product.name}\n`));
     return {
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      rating: product.rating,
-      sold: product.sold,
+      product: {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        rating: product.rating,
+        sold: product.sold,
+      },
+      productId: product.id,
     };
   }
 
-  return await enterProduct();
+  const newProduct = await enterProduct();
+  const allProducts = await getProducts();
+  const found = allProducts.find((p) => p.name === newProduct.name);
+  return { product: newProduct, productId: found ? found.id : null };
 }
 
 async function enterProduct(): Promise<ProductInfo> {
@@ -216,6 +235,130 @@ async function editText(currentText: string, label: string): Promise<string> {
   return edit || currentText;
 }
 
+// ── Script Context Selector ──
+
+interface ScriptContextResult {
+  source: "selected" | "manual" | "ai-generated";
+  text: string;
+  scriptId: string | null;
+}
+
+async function selectScriptContext(
+  productId?: string | null,
+): Promise<ScriptContextResult> {
+  const { contextSource } = await inquirer.prompt([
+    {
+      type: "rawlist",
+      name: "contextSource",
+      message: "📝 Ngữ cảnh cho caption:",
+      choices: [
+        ...(productId
+          ? [
+              {
+                name: "📋 Chọn script đã lưu (của sản phẩm này)",
+                value: "this-product",
+              },
+            ]
+          : []),
+        {
+          name: "📋 Chọn script đã lưu (tất cả scripts)",
+          value: "all-scripts",
+        },
+        { name: "✏️ Tự nhập tóm tắt", value: "manual" },
+        { name: "🤖 AI tự tạo kịch bản nhanh", value: "ai-gen" },
+      ],
+    },
+  ]);
+
+  // Option 1: Scripts of current product
+  if (contextSource === "this-product" && productId) {
+    const scripts = await getVideoScripts(50);
+    const productScripts = scripts.filter((s) => s.productId === productId);
+
+    if (productScripts.length === 0) {
+      console.log(chalk.yellow("\n📭 Chưa có script nào cho sản phẩm này.\n"));
+      return selectScriptContext(productId);
+    }
+
+    return pickScriptFromList(productScripts, "của sản phẩm này");
+  }
+
+  // Option 2: All scripts
+  if (contextSource === "all-script") {
+    const scripts = await getVideoScripts(50);
+
+    if (scripts.length === 0) {
+      console.log(chalk.yellow("\n📭 Chưa có script nào được lưu.\n"));
+      return selectScriptContext(productId);
+    }
+
+    return pickScriptFromList(scripts, "tất cả");
+  }
+
+  // Option 3: Manual input
+  if (contextSource === "manual") {
+    const { manualText } = await inquirer.prompt([
+      {
+        type: "input",
+        name: "manualText",
+        message: "✏️ Nhập tóm tắt nội dung video:",
+        validate: (input: string) =>
+          input.trim().length > 0 ? true : "Vui lòng nhập tóm tắt",
+      },
+    ]);
+    return { source: "manual", text: manualText.trim(), scriptId: null };
+  }
+
+  // Option 4: AI generate
+  return { source: "ai-generated", text: "", scriptId: null };
+}
+
+async function pickScriptFromList(
+  scripts: SavedVideoScript[],
+  label: string,
+): Promise<ScriptContextResult> {
+  const choices = scripts.slice(0, 15).map((s, i) => {
+    const hookPreview =
+      s.hook.length > 50 ? s.hook.substring(0, 50) + "..." : s.hook;
+    const bodyPreview =
+      s.body.length > 60 ? s.body.substring(0, 60) + "..." : s.body;
+    const date = new Date(s.createdAt).toLocaleDateString("vi-VN");
+    return {
+      name: `${i + 1}. [${s.platform}] ${s.title} (${date})\n     Hook: "${hookPreview}"`,
+      value: s.id,
+    };
+  });
+
+  choices.push({ name: "⏮️ Quay lại chọn nguồn", value: "back" });
+
+  const { selectedScript } = await inquirer.prompt([
+    {
+      type: "rawlist",
+      name: "selectedScript",
+      message: `📋 Chọn script từ danh sách ${label}:`,
+      choices,
+    },
+  ]);
+
+  if (selectedScript === "back") {
+    return selectScriptContext();
+  }
+
+  const script = scripts.find((s) => s.id === selectedScript);
+  if (!script) {
+    console.log(chalk.yellow("\n⚠️ Không tìm thấy script.\n"));
+    return selectScriptContext();
+  }
+
+  console.log(chalk.green(`\n✅ Đã chọn script: "${script.title}"\n`));
+  console.log(chalk.gray(`   Hook: "${script.hook}"\n`));
+  console.log(
+    chalk.gray(`   Body preview: "${script.body.substring(0, 150)}..."\n`),
+  );
+
+  return { source: "selected", text: script.body, scriptId: script.id };
+}
+
 // ── Post-Action Handler ──
 
 async function handlePostActions(
@@ -330,21 +473,22 @@ async function generateScriptFlow() {
     chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
   );
 
-  const product = await selectOrEnterProduct();
+  const { product, productId } = await selectOrEnterProduct();
   const platform = await selectPlatform();
 
   const agent = new VideoCreatorAgent();
 
-  const script = await generateWithRetry(
-    () => agent.generateScript(product, platform),
-    (s) => validateScript(s),
+  const { script, savedId: scriptDbId } = await generateWithRetry(
+    () => agent.generateScript(product, platform, productId),
+    (result) => validateScript(result.script),
   );
 
   console.log(formatScriptOutput(script));
 
-  const content: GeneratedContent = { product, script };
-  await saveToHistory(product, content, "script");
+  // History saved with reference to the script
+  await saveToHistoryWithRefs(productId, scriptDbId, null, "script");
 
+  const content: GeneratedContent = { product, script };
   const result = await handlePostActions("script", content);
   if (result === "back") {
     await generateScriptFlow();
@@ -365,35 +509,27 @@ async function generateDescriptionFlow() {
     chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
   );
 
-  const product = await selectOrEnterProduct();
+  const { product, productId } = await selectOrEnterProduct();
   const platform = await selectPlatform();
 
-  const { scriptInput } = await inquirer.prompt([
-    {
-      type: "input",
-      name: "scriptInput",
-      message: "📝 Tóm tắt nội dung video (Enter để AI tự tạo kịch bản trước):",
-      default: "",
-    },
-  ]);
+  // User chọn nguồn context cho caption
+  const ctxResult = await selectScriptContext(productId);
 
-  let scriptContext = scriptInput.trim();
+  let scriptContext: string;
+  let scriptDbId: string | null = null;
 
-  // Nếu bỏ trống → gọi VideoCreatorAgent tạo script nhanh
-  if (!scriptContext) {
-    console.log(
-      chalk.yellow(
-        "\n🎬 Chưa có tóm tắt — AI đang tự tạo kịch bản video nhanh...\n",
-      ),
-    );
+  if (ctxResult.source === "ai-generated") {
+    // AI tự tạo kịch bản nhanh
+    console.log(chalk.yellow("\n🎬 AI đang tự tạo kịch bản video nhanh...\n"));
 
     const videoCreator = new VideoCreatorAgent();
-    const autoScript = await generateWithRetry(
-      () => videoCreator.generateScript(product, platform),
-      (s) => validateScript(s),
+    const { script: autoScript, savedId } = await generateWithRetry(
+      () => videoCreator.generateScript(product, platform, productId),
+      (result) => validateScript(result.script),
     );
 
     scriptContext = autoScript.body.substring(0, 200);
+    scriptDbId = savedId;
     console.log(
       chalk.green(
         "✅ Đã tạo kịch bản nhanh. Đang dùng làm ngữ cảnh cho caption...\n",
@@ -401,25 +537,39 @@ async function generateDescriptionFlow() {
     );
     console.log(chalk.gray(`   Tóm tắt: "${scriptContext}..."\n`));
 
-    // Lưu script vào history luôn
-    const scriptContent: GeneratedContent = { product, script: autoScript };
-    await saveToHistory(product, scriptContent, "script");
+    await saveToHistoryWithRefs(productId, savedId, null, "script");
+  } else {
+    // Selected từ DB hoặc manual input
+    scriptContext = ctxResult.text;
+    scriptDbId = ctxResult.scriptId;
+
+    if (ctxResult.source === "selected") {
+      console.log(chalk.green("✅ Đang dùng script đã lưu làm ngữ cảnh...\n"));
+    }
   }
 
   console.log(chalk.yellow("\n⚙️ Đang tạo mô tả bài đăng...\n"));
 
   const agent = new MarketingWriterAgent();
 
-  const description = await generateWithRetry(
-    () => agent.generateDescription(product, scriptInput, platform),
-    (d) => validateDescription(d),
+  const { description, savedId: descDbId } = await generateWithRetry(
+    () =>
+      agent.generateDescription(
+        product,
+        scriptContext,
+        platform,
+        productId,
+        scriptDbId,
+      ),
+    (result) => validateDescription(result.description),
   );
 
   console.log(formatDescriptionOutput(description));
 
-  const content: GeneratedContent = { product, description };
-  await saveToHistory(product, content, "description");
+  // History saved with reference to the description
+  await saveToHistoryWithRefs(productId, null, descDbId, "description");
 
+  const content: GeneratedContent = { product, description };
   const result = await handlePostActions("description", content);
   if (result === "back") {
     await generateDescriptionFlow();
@@ -442,7 +592,7 @@ async function generateImageBriefFlow() {
     chalk.bold.cyan("╚══════════════════════════════════════════════════╝\n"),
   );
 
-  const product = await selectOrEnterProduct();
+  const { product, productId } = await selectOrEnterProduct();
 
   const { adPlatform } = await inquirer.prompt([
     {
@@ -482,7 +632,7 @@ async function generateImageBriefFlow() {
   };
 
   const agent = new ImageCreatorAgent();
-  const brief = await agent.generateBrief(input);
+  const { brief, savedId } = await agent.generateBrief(input, productId);
   agent.displayBrief(brief);
 
   while (true) {
@@ -827,20 +977,19 @@ async function generateTTSFromScript() {
 
     if (source === "new") {
       console.log(chalk.yellow("\n🎬 Tạo kịch bản mới trước...\n"));
-      const product = await selectOrEnterProduct();
+      const { product, productId } = await selectOrEnterProduct();
       const plat = await selectPlatform();
 
       const agent = new VideoCreatorAgent();
-      const script = await generateWithRetry(
-        () => agent.generateScript(product, plat),
-        (s) => validateScript(s),
+      const { script, savedId } = await generateWithRetry(
+        () => agent.generateScript(product, plat, productId),
+        (result) => validateScript(result.script),
       );
 
       console.log(formatScriptOutput(script));
       scriptContent = script;
 
-      const content: GeneratedContent = { product, script };
-      await saveToHistory(product, content, "script");
+      await saveToHistoryWithRefs(productId, savedId, null, "script");
     } else {
       const entry = scriptsOnly.find((h: HistoryEntry) => h.id === source);
       if (!entry) return;
@@ -848,20 +997,19 @@ async function generateTTSFromScript() {
     }
   } else {
     console.log(chalk.yellow("\n📭 Chưa có kịch bản nào. Tạo mới...\n"));
-    const product = await selectOrEnterProduct();
+    const { product, productId } = await selectOrEnterProduct();
     const plat = await selectPlatform();
 
     const agent = new VideoCreatorAgent();
-    const script = await generateWithRetry(
-      () => agent.generateScript(product, plat),
-      (s) => validateScript(s),
+    const { script, savedId } = await generateWithRetry(
+      () => agent.generateScript(product, plat, productId),
+      (result) => validateScript(result.script),
     );
 
     console.log(formatScriptOutput(script));
     scriptContent = script;
 
-    const content: GeneratedContent = { product, script };
-    await saveToHistory(product, content, "script");
+    await saveToHistoryWithRefs(productId, savedId, null, "script");
   }
 
   if (!scriptContent) return;
@@ -943,7 +1091,7 @@ async function generateTrendScanFlow() {
   }
 
   const scanner = new AutonomousTrendScanner();
-  const { brief, product } = await scanner.scanAndGenerate(niche);
+  const { brief, product, trendBriefId } = await scanner.scanAndGenerate(niche);
 
   // Post-actions: hỏi user muốn làm gì tiếp
   while (true) {
@@ -974,17 +1122,23 @@ async function generateTrendScanFlow() {
         chalk.yellow("\n⚙️ Đang tạo kịch bản video từ sản phẩm trend...\n"),
       );
 
+      // Get product ID
+      const allProducts = await getProducts();
+      const foundProduct = allProducts.find((p) => p.name === product.name);
+      const productId = foundProduct ? foundProduct.id : null;
+
       const videoCreator = new VideoCreatorAgent();
-      const script = await generateWithRetry(
-        () => videoCreator.generateScript(product, platform),
-        (s) => validateScript(s),
+      const { script, savedId: scriptDbId } = await generateWithRetry(
+        () => videoCreator.generateScript(product, platform, productId),
+        (result) => validateScript(result.script),
       );
 
       console.log(formatScriptOutput(script));
 
-      const content: GeneratedContent = { product, script };
-      await saveToHistory(product, content, "script");
+      // Save history with references
+      await saveToHistoryWithRefs(productId, scriptDbId, null, "script");
 
+      const content: GeneratedContent = { product, script };
       const result = await handlePostActions("script", content);
       if (result === "back") continue;
       return;
@@ -992,32 +1146,31 @@ async function generateTrendScanFlow() {
 
     if (action === "description") {
       const platform = await selectPlatform();
-      const { scriptSummary } = await inquirer.prompt([
-        {
-          type: "input",
-          name: "scriptSummary",
-          message:
-            "📝 Tóm tắt nội dung video (Enter để AI tự tạo kịch bản trước):",
-          default: "",
-        },
-      ]);
 
-      let scriptContext = scriptSummary.trim();
+      // Get product ID first
+      const allProducts = await getProducts();
+      const foundProduct = allProducts.find((p) => p.name === product.name);
+      const trendProductId = foundProduct ? foundProduct.id : null;
 
-      if (!scriptContext) {
+      // User chọn nguồn context cho caption
+      const ctxResult = await selectScriptContext(trendProductId);
+
+      let scriptContext: string;
+      let scriptDbId: string | null = null;
+
+      if (ctxResult.source === "ai-generated") {
         console.log(
-          chalk.yellow(
-            "\n🎬 Chưa có tóm tắt — AI đang tự tạo kịch bản video nhanh...\n",
-          ),
+          chalk.yellow("\n🎬 AI đang tự tạo kịch bản video nhanh...\n"),
         );
 
         const videoCreator = new VideoCreatorAgent();
-        const autoScript = await generateWithRetry(
-          () => videoCreator.generateScript(product, platform),
-          (s) => validateScript(s),
+        const { script: autoScript, savedId } = await generateWithRetry(
+          () => videoCreator.generateScript(product, platform, trendProductId),
+          (result) => validateScript(result.script),
         );
 
         scriptContext = autoScript.body.substring(0, 200);
+        scriptDbId = savedId;
         console.log(
           chalk.green(
             "✅ Đã tạo kịch bản nhanh. Đang dùng làm ngữ cảnh cho caption...\n",
@@ -1025,24 +1178,44 @@ async function generateTrendScanFlow() {
         );
         console.log(chalk.gray(`   Tóm tắt: "${scriptContext}..."\n`));
 
-        const scriptContent: GeneratedContent = { product, script: autoScript };
-        await saveToHistory(product, scriptContent, "script");
+        await saveToHistoryWithRefs(trendProductId, savedId, null, "script");
+      } else {
+        scriptContext = ctxResult.text;
+        scriptDbId = ctxResult.scriptId;
+
+        if (ctxResult.source === "selected") {
+          console.log(
+            chalk.green("✅ Đang dùng script đã lưu làm ngữ cảnh...\n"),
+          );
+        }
       }
 
       console.log(chalk.yellow("\n⚙️ Đang tạo mô tả bài đăng...\n"));
 
       const marketingWriter = new MarketingWriterAgent();
-      const description = await generateWithRetry(
+      const { description, savedId: descDbId } = await generateWithRetry(
         () =>
-          marketingWriter.generateDescription(product, scriptContext, platform),
-        (d) => validateDescription(d),
+          marketingWriter.generateDescription(
+            product,
+            scriptContext,
+            platform,
+            trendProductId,
+            scriptDbId,
+          ),
+        (result) => validateDescription(result.description),
       );
 
       console.log(formatDescriptionOutput(description));
 
-      const content: GeneratedContent = { product, description };
-      await saveToHistory(product, content, "description");
+      // Save history with references
+      await saveToHistoryWithRefs(
+        trendProductId,
+        null,
+        descDbId,
+        "description",
+      );
 
+      const content: GeneratedContent = { product, description };
       const result = await handlePostActions("description", content);
       if (result === "back") continue;
       return;

@@ -1,24 +1,18 @@
-# Hướng dẫn Migration lên Supabase
+# Hướng dẫn Setup Supabase
 
 ## 📋 Tổng quan
 
-Bot đã được cập nhật để hỗ trợ **Supabase** làm storage chính, với fallback JSON tự động.
+Bot sử dụng **Supabase (PostgreSQL)** làm storage duy nhất. Không có JSON fallback.
 
-### Cơ chế hoạt động
-
-| Trạng thái                 | Behavior                                                                |
-| -------------------------- | ----------------------------------------------------------------------- |
-| **Chưa cấu hình Supabase** | Bot tự động dùng JSON files (`data/products.json`, `data/history.json`) |
-| **Đã cấu hình Supabase**   | Bot dùng PostgreSQL database, JSON làm fallback khi có lỗi              |
-| **Supabase gặp lỗi**       | Tự động fallback về JSON files → Vẫn hoạt động bình thường              |
+Nếu Supabase chưa được cấu hình trong `.env`, bot sẽ thoát ngay với thông báo lỗi.
 
 ### Ưu điểm của Supabase
 
-✅ **Đa thiết bị**: Dữ liệu đồng bộ across machines  
-✅ **Backup tự động**: Supabase tự backup hàng ngày  
-✅ **Query mạnh mẽ**: PostgreSQL queries, filters, pagination  
-✅ **Scalable**: Không giới hạn file size như JSON  
-✅ **An toàn**: Row Level Security, encrypted at rest  
+✅ **Đa thiết bị**: Dữ liệu đồng bộ across machines
+✅ **Backup tự động**: Supabase tự backup hàng ngày
+✅ **Query mạnh mẽ**: PostgreSQL queries, filters, pagination
+✅ **Scalable**: Không giới hạn file size
+✅ **An toàn**: Row Level Security, encrypted at rest
 ✅ **Miễn phí**: Free tier đủ dùng cho cá nhân
 
 ## 🚀 Các bước setup Supabase
@@ -55,7 +49,7 @@ Bot đã được cập nhật để hỗ trợ **Supabase** làm storage chính
 6. Click **"Run"** (hoặc Ctrl+Enter)
 7. Đợi thông báo **"Success. No rows returned"**
 
-> ✅ **Đã tạo xong:** 2 tables (`products`, `history`) với indexes và policies
+> ✅ **Đã tạo xong:** 6 tables (`products`, `video_scripts`, `post_descriptions`, `trend_briefs`, `image_briefs`, `history`) với indexes và policies
 
 ### Bước 4: Cấu hình .env
 
@@ -74,9 +68,9 @@ SUPABASE_URL=https://abcdefghijklmnop.supabase.co
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzAwMDAwMDAsImV4cCI6MjAwMDAwMDAwMH0.abcdefghijklmnopqrstuvwxyz123456
 ```
 
-### Bước 5: Migration dữ liệu (nếu có dữ liệu cũ)
+### Bước 5: Migration dữ liệu cũ (nếu có)
 
-Nếu bạn đã có dữ liệu trong JSON files (`data/products.json`, `data/history.json`):
+Nếu bạn đã có dữ liệu trong JSON files cũ (`data/products.json`, `data/history.json`):
 
 ```bash
 npm run migrate
@@ -91,35 +85,17 @@ npm run migrate
 5. ✅ Upload từng history entry lên Supabase
 6. ✅ Báo cáo kết quả (thành công/thất bại)
 
-**Ví dụ output:**
-
-```
-🚀 Bắt đầu migration lên Supabase...
-✅ Đã kết nối Supabase
-
-📦 Migrating products...
-✅ Đã migrate 5 products
-
-📜 Migrating history...
-✅ Đã migrate 20 history entries
-
-🎉 Migration hoàn tất!
-💡 Bạn có thể xóa files JSON cũ nếu muốn
-```
-
 ### Bước 6: Chạy bot và kiểm tra
 
 ```bash
 npm run dev
 ```
 
-Bot sẽ tự động dùng Supabase!
-
 **Kiểm tra:**
 
 1. Tạo 1 nội dung mới
 2. Vào Supabase Dashboard → **Table Editor**
-3. Kiểm tra tables `products` và `history`
+3. Kiểm tra các tables: `products`, `video_scripts`, `post_descriptions`, `history`
 4. Xem dữ liệu đã được insert
 
 ## 📊 Database Schema chi tiết
@@ -139,208 +115,158 @@ Lưu trữ thông tin sản phẩm đã được sử dụng.
 | `usage_count` | INTEGER     | DEFAULT 1         | Số lần đã sử dụng tạo content |
 | `created_at`  | TIMESTAMPTZ | DEFAULT NOW()     | Thời gian tạo                 |
 
-**Indexes:**
+### Bảng `video_scripts`
 
-- `idx_products name`: Tìm kiếm theo tên nhanh
-- `idx products usage_count DESC`: Sắp xếp theo mức độ sử dụng
+Lưu kịch bản video đã tạo bởi AI.
 
-**Ví dụ dữ liệu:**
+| Cột                  | Kiểu        | Ràng buộc        | Mô tả                            |
+| -------------------- | ----------- | ---------------- | -------------------------------- |
+| `id`                 | TEXT        | PRIMARY KEY      | ID unique                        |
+| `product_id`         | TEXT        | FK → products.id | Link đến sản phẩm (nullable)     |
+| `platform`           | TEXT        | NOT NULL         | Nền tảng (tiktok, youtube, etc.) |
+| `title`              | TEXT        | NOT NULL         | Tiêu đề kịch bản                 |
+| `hook`               | TEXT        | NOT NULL         | Câu mở đầu thu hút               |
+| `body`               | TEXT        | NOT NULL         | Nội dung chính                   |
+| `voiceover_cta`      | TEXT        | NOT NULL         | Kêu gọi hành động                |
+| `word_count`         | INTEGER     | NOT NULL         | Số từ                            |
+| `estimated_duration` | TEXT        | NOT NULL         | Thời lượng ước tính              |
+| `raw_ai_response`    | JSONB       | nullable         | Response gốc từ AI               |
+| `created_at`         | TIMESTAMPTZ | DEFAULT NOW()    | Thời gian tạo                    |
 
-```json
-{
-  "id": "prod_abc123",
-  "name": "Máy hút bụi Deerma CM800",
-  "description": "Máy hút bụi cầm tay diệt khuẩn UV...",
-  "price": "299.000đ",
-  "rating": "4.8/5",
-  "sold": "15k+",
-  "usage_count": 5,
-  "created_at": "2026-04-07T10:30:00Z"
-}
-```
+### Bảng `post_descriptions`
+
+Lưu caption/mô tả bài đăng cho các nền tảng.
+
+| Cột          | Kiểu        | Ràng buộc             | Mô tả                        |
+| ------------ | ----------- | --------------------- | ---------------------------- |
+| `id`         | TEXT        | PRIMARY KEY           | ID unique                    |
+| `product_id` | TEXT        | FK → products.id      | Link đến sản phẩm (nullable) |
+| `script_id`  | TEXT        | FK → video_scripts.id | Link đến script (nullable)   |
+| `platform`   | TEXT        | NOT NULL              | Nền tảng                     |
+| `caption`    | TEXT        | NOT NULL              | Nội dung caption             |
+| `hashtags`   | TEXT[]      | DEFAULT '{}'          | Mảng hashtags                |
+| `cta`        | TEXT        | NOT NULL              | Call-to-action               |
+| `word_count` | INTEGER     | NOT NULL              | Số từ                        |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW()         | Thời gian tạo                |
+
+### Bảng `trend_briefs`
+
+Lưu kết quả research trend từ AI.
+
+| Cột               | Kiểu        | Ràng buộc        | Mô tả                           |
+| ----------------- | ----------- | ---------------- | ------------------------------- |
+| `id`              | TEXT        | PRIMARY KEY      | ID unique                       |
+| `source`          | TEXT        | NOT NULL         | Nguồn (tiktok, youtube, shopee) |
+| `niche`           | TEXT        | NOT NULL         | Ngách sản phẩm                  |
+| `product_id`      | TEXT        | FK → products.id | Link đến sản phẩm (nullable)    |
+| `angle`           | TEXT        | NOT NULL         | Góc tiếp cận                    |
+| `hook`            | TEXT        | NOT NULL         | Câu hook trend                  |
+| `hashtags`        | TEXT[]      | DEFAULT '{}'     | Mảng hashtags                   |
+| `pain_point`      | TEXT        | NOT NULL         | Pain point của khách hàng       |
+| `cta_angle`       | TEXT        | NOT NULL         | Góc kêu gọi hành động           |
+| `raw_ai_response` | JSONB       | nullable         | Response gốc từ AI              |
+| `created_at`      | TIMESTAMPTZ | DEFAULT NOW()    | Thời gian tạo                   |
+
+### Bảng `image_briefs`
+
+Lưu creative brief cho ảnh quảng cáo.
+
+| Cột                | Kiểu        | Ràng buộc        | Mô tả                                 |
+| ------------------ | ----------- | ---------------- | ------------------------------------- |
+| `id`               | TEXT        | PRIMARY KEY      | ID unique                             |
+| `product_id`       | TEXT        | FK → products.id | Link đến sản phẩm (nullable)          |
+| `ad_platform`      | TEXT        | NOT NULL         | Nền tảng ads (facebook, tiktok, etc.) |
+| `aspect_ratio`     | TEXT        | NOT NULL         | Tỷ lệ ảnh (1:1, 9:16, 16:9)           |
+| `ad_format`        | TEXT        | NOT NULL         | Format ads                            |
+| `visual_style`     | TEXT        | NOT NULL         | Phong cách hình ảnh                   |
+| `color_palette`    | TEXT[]      | DEFAULT '{}'     | Bảng màu đề xuất                      |
+| `prompt_safe`      | TEXT        | NOT NULL         | Prompt an toàn                        |
+| `prompt_bold`      | TEXT        | NOT NULL         | Prompt nổi bật                        |
+| `prompt_lifestyle` | TEXT        | NOT NULL         | Prompt lifestyle                      |
+| `negative_prompt`  | TEXT        | NOT NULL         | Prompt tiêu cực (tránh)               |
+| `shooting_notes`   | TEXT        | NOT NULL         | Ghi chú chụp/quay                     |
+| `raw_ai_response`  | JSONB       | nullable         | Response gốc từ AI                    |
+| `created_at`       | TIMESTAMPTZ | DEFAULT NOW()    | Thời gian tạo                         |
 
 ### Bảng `history`
 
-Lưu trữ lịch sử tạo nội dung (scripts, descriptions).
+Lưu lịch sử tạo nội dung, reference đến các bảng content.
 
-| Cột            | Kiểu        | Ràng buộc                       | Mô tả                                    |
-| -------------- | ----------- | ------------------------------- | ---------------------------------------- |
-| `id`           | TEXT        | PRIMARY KEY                     | ID unique (VD: `hist_xyz789`)            |
-| `product_id`   | TEXT        | FK → products.id (optional)     | Link đến products table                  |
-| `product_data` | JSONB       | NOT NULL                        | Snapshot thông tin sản phẩm              |
-| `content_data` | JSONB       | NOT NULL                        | Nội dung AI đã tạo (script, description) |
-| `workflow`     | TEXT        | CHECK (script/description/full) | Loại workflow đã dùng                    |
-| `created_at`   | TIMESTAMPTZ | DEFAULT NOW()                   | Thời gian tạo                            |
+| Cột              | Kiểu        | Ràng buộc                                         | Mô tả                                |
+| ---------------- | ----------- | ------------------------------------------------- | ------------------------------------ |
+| `id`             | TEXT        | PRIMARY KEY                                       | ID unique                            |
+| `product_id`     | TEXT        | FK → products.id                                  | Link đến products table              |
+| `script_id`      | TEXT        | FK → video_scripts.id                             | Link đến video script (nullable)     |
+| `description_id` | TEXT        | FK → post_descriptions.id                         | Link đến post description (nullable) |
+| `workflow`       | TEXT        | CHECK (script/description/full/trend/image_brief) | Loại workflow đã dùng                |
+| `created_at`     | TIMESTAMPTZ | DEFAULT NOW()                                     | Thời gian tạo                        |
 
-**Indexes:**
+## 🔧 API Functions
 
-- `idx history created_at DESC`: Sắp xếp theo thời gian
-- `idx history workflow`: Lọc theo loại workflow
+### Products
 
-**JSONB Structure - `product_data`:**
+| Function               | Return type                          |
+| ---------------------- | ------------------------------------ |
+| `saveProduct(product)` | `Promise<SavedProduct>`              |
+| `getProducts()`        | `Promise<SavedProduct[]>`            |
+| `getProductById(id)`   | `Promise<SavedProduct \| undefined>` |
+| `deleteProduct(id)`    | `Promise<boolean>`                   |
+| `deleteAllProducts()`  | `Promise<number>`                    |
 
-```json
-{
-  "name": "Máy hút bụi Deerma CM800",
-  "description": "Máy hút bụi cầm tay...",
-  "price": "299.000đ",
-  "rating": "4.8/5",
-  "sold": "15k+"
-}
-```
+### Video Scripts
 
-**JSONB Structure - `content_data`:**
+| Function                                            | Return type                              |
+| --------------------------------------------------- | ---------------------------------------- |
+| `saveVideoScript(script, productId, rawAiResponse)` | `Promise<SavedVideoScript>`              |
+| `getVideoScripts(limit)`                            | `Promise<SavedVideoScript[]>`            |
+| `getVideoScriptById(id)`                            | `Promise<SavedVideoScript \| undefined>` |
+| `getVideoScriptsByProductId(productId, limit)`      | `Promise<SavedVideoScript[]>`            |
+| `deleteVideoScript(id)`                             | `Promise<boolean>`                       |
+| `deleteAllVideoScripts()`                           | `Promise<void>`                          |
 
-```json
-{
-  "script": {
-    "platform": "tiktok",
-    "title": "Review Máy hút bụi Deerma CM800",
-    "hook": "Bạn có biết 80% bụi trong nhà đến từ đâu?",
-    "body": "Nội dung chính của video...",
-    "voiceoverCTA": "Nhấn giỏ hàng bên trái để mua ngay!",
-    "wordCount": 95,
-    "estimatedDuration": "38 giây"
-  },
-  "description": {
-    "platform": "tiktok",
-    "caption": "Sản phẩm này quá đỉnh luôn mn ơi!...",
-    "hashtags": ["#fyp", "#xuhuong", "#review", "#mayhutbui"],
-    "cta": "Mua ngay tại giỏ hàng nhé!",
-    "wordCount": 180
-  }
-}
-```
+### Post Descriptions
 
-**Ví dụ dữ liệu:**
+| Function                                           | Return type                                  |
+| -------------------------------------------------- | -------------------------------------------- |
+| `savePostDescription(desc, productId, scriptId)`   | `Promise<SavedPostDescription>`              |
+| `getPostDescriptions(limit)`                       | `Promise<SavedPostDescription[]>`            |
+| `getPostDescriptionById(id)`                       | `Promise<SavedPostDescription \| undefined>` |
+| `getPostDescriptionsByProductId(productId, limit)` | `Promise<SavedPostDescription[]>`            |
+| `deletePostDescription(id)`                        | `Promise<boolean>`                           |
+| `deleteAllPostDescriptions()`                      | `Promise<void>`                              |
 
-```json
-{
-  "id": "hist_xyz789",
-  "product_id": "prod_abc123",
-  "product_data": {...},
-  "content_data": {...},
-  "workflow": "full",
-  "created_at": "2026-04-07T11:00:00Z"
-}
-```
+### Trend Briefs
 
-## 🔧 API Changes (Breaking Changes)
+| Function                           | Return type                             |
+| ---------------------------------- | --------------------------------------- |
+| `saveTrendBrief(brief, productId)` | `Promise<SavedTrendBrief>`              |
+| `getTrendBriefs(limit)`            | `Promise<SavedTrendBrief[]>`            |
+| `getTrendBriefById(id)`            | `Promise<SavedTrendBrief \| undefined>` |
+| `deleteTrendBrief(id)`             | `Promise<boolean>`                      |
+| `deleteAllTrendBriefs()`           | `Promise<void>`                         |
 
-### Trước đây (synchronous)
+### Image Briefs
 
-```typescript
-// Old code - sync
-const products = getProducts();
-saveToHistory(product, content, "script");
-const history = getHistory();
-```
+| Function                 | Return type                             |
+| ------------------------ | --------------------------------------- |
+| `saveImageBrief(brief)`  | `Promise<SavedImageBrief>`              |
+| `getImageBriefs(limit)`  | `Promise<SavedImageBrief[]>`            |
+| `getImageBriefById(id)`  | `Promise<SavedImageBrief \| undefined>` |
+| `deleteImageBrief(id)`   | `Promise<boolean>`                      |
+| `deleteAllImageBriefs()` | `Promise<void>`                         |
 
-### Bây giờ (asynchronous)
+### History
 
-```typescript
-// New code - async
-const products = await getProducts();
-await saveToHistory(product, content, "script");
-const history = await getHistory();
-```
-
-> ✅ **Tất cả functions trong `src/index.ts` đã được update để dùng `await`**
-
-### Các functions đã chuyển sang async
-
-| Function             | Trước | Giờ   | Ghi chú                            |
-| -------------------- | ----- | ----- | ---------------------------------- |
-| `saveProduct`        | sync  | async | Trả về SavedProduct                |
-| `getProducts`        | sync  | async | Trả về `SavedProduct[]`            |
-| `getProductById`     | sync  | async | Trả về `SavedProduct \| undefined` |
-| `deleteProduct`      | sync  | async | Trả về boolean                     |
-| `saveToHistory`      | sync  | async | Trả về HistoryEntry                |
-| `getHistory`         | sync  | async | Trả về `HistoryEntry[]`            |
-| `getHistoryEntry`    | sync  | async | Trả về `HistoryEntry \| undefined` |
-| `clearHistory`       | sync  | async | Void                               |
-| `deleteHistoryEntry` | sync  | async | Trả về boolean                     |
-
-### Migration guide cho code của bạn
-
-Nếu bạn có code custom gọi các functions này:
-
-1. **Thêm `await` trước mọi calls:**
-
-   ```typescript
-   // ❌ Sai
-   const products = getProducts();
-
-   // ✅ Đúng
-   const products = await getProducts();
-   ```
-
-2. **Functions chứa calls async cũng phải thành async:**
-
-   ```typescript
-   // ❌ Sai
-   function myWorkflow() {
-     const products = getProducts(); // Error!
-   }
-
-   // ✅ Đúng
-   async function myWorkflow() {
-     const products = await getProducts();
-   }
-   ```
-
-## 🛡️ Fallback Mechanism chi tiết
-
-### Cách hoạt động
-
-```
-┌─────────────────────────────────────┐
-│  Bot cần đọc/ghi dữ liệu            │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│  Kiểm tra: Đã cấu hình Supabase?    │
-└──────────────┬──────────────────────┘
-               │
-        ┌──────┴──────┐
-        │             │
-       ✅ Có         ❌ Không
-        │             │
-        ▼             ▼
-┌───────────┐   ┌──────────┐
-│ Thử       │   │ Dùng     │
-│ Supabase  │   │ JSON     │
-└─────┬─────┘   └──────────┘
-      │
-      ├──────┐
-      │      │
-     ✅     ❌ Lỗi
-      │      │
-      ▼      ▼
-┌─────────┐ ┌──────────────┐
-│ Thành   │ │ Fallback     │
-│ công!   │ │ về JSON      │
-└─────────┘ └──────────────┘
-```
-
-### Khi nào fallback xảy ra?
-
-- ❌ Mất kết nối internet
-- ❌ Supabase credentials sai
-- ❌ Table chưa được tạo
-- ❌ Quota vượt giới hạn (free tier)
-- ❌ Lỗi database bất kỳ
-
-### Behavior khi fallback
-
-```
-[WARNING] Supabase error: connection timeout
-[INFO] Falling back to JSON storage...
-[SUCCESS] Data saved to data/history.json
-```
-
-Bot vẫn hoạt động bình thường, chỉ khác là dùng JSON thay vì PostgreSQL.
+| Function                                                       | Return type                                                |
+| -------------------------------------------------------------- | ---------------------------------------------------------- |
+| `saveToHistory(product, content, workflow)`                    | `Promise<HistoryEntry>`                                    |
+| `saveToHistoryWithRefs(productId, scriptId, descId, workflow)` | `Promise<PersistedHistoryEntry>`                           |
+| `getHistory()`                                                 | `Promise<HistoryEntry[]>`                                  |
+| `getHistoryWithRefs(limit)`                                    | `Promise<PersistedHistoryEntry[]>`                         |
+| `getHistoryEntry(id)`                                          | `Promise<HistoryEntry \| undefined>`                       |
+| `getHistoryEntryWithRefs(id)`                                  | `Promise<{history, product, script, description} \| null>` |
+| `clearHistory()`                                               | `Promise<void>`                                            |
+| `deleteHistoryEntry(id)`                                       | `Promise<boolean>`                                         |
 
 ## ❓ Troubleshooting
 
@@ -366,15 +292,6 @@ Bot vẫn hoạt động bình thường, chỉ khác là dùng JSON thay vì Po
 3. Paste và **Run**
 4. Kiểm tra lại trong **Table Editor** xem tables đã có chưa
 
-### Lỗi "duplicate key value violates unique constraint"
-
-**Nguyên nhân:** Product với tên đó đã tồn tại trong database.
-
-**Cách sửa:**
-
-- Đây là behavior bình thường - code sẽ tự động **upsert** (update nếu tồn tại)
-- Nếu vẫn lỗi, kiểm tra logic `saveProduct()` trong `src/data/storage.ts`
-
 ### Migration thất bại
 
 **Kiểm tra:**
@@ -385,101 +302,21 @@ Bot vẫn hoạt động bình thường, chỉ khác là dùng JSON thay vì Po
 4. ✅ SQL schema đã được chạy
 5. ✅ JSON files có dữ liệu hợp lệ
 
-**Debug:**
+## 🎯 Các lệnh hữu ích
 
 ```bash
-# Xem JSON files có dữ liệu không
-cat data/products.json
-cat data/history.json
-
-# Test kết nối Supabase
-npm run dev
-# Chọn option 8: Kiểm tra kết nối AI
-```
-
-### Bot vẫn dùng JSON dù đã cấu hình Supabase
-
-**Kiểm tra:**
-
-1. Restart bot sau khi sửa `.env`
-2. Kiểm tra console logs khi khởi động
-3. Xem có message nào về Supabase errors không
-
-### Data không đồng bộ giữa các máy
-
-**Nguyên nhân:** Một trong các máy đang dùng JSON thay vì Supabase.
-
-**Cách sửa:**
-
-- Đảm bảo TẤT CẢ máy đều có cùng `.env` với Supabase credentials
-- Chạy `npm run dev` trên mỗi máy để kiểm tra
-
-## 🎯 So sánh: JSON vs Supabase
-
-| Tính năng       | JSON Files           | Supabase                   |
-| --------------- | -------------------- | -------------------------- |
-| **Tốc độ**      | ⚡ Nhanh hơn (local) | 🐢 Chậm hơn chút (network) |
-| **Đa thiết bị** | ❌ Không             | ✅ Có                      |
-| **Backup**      | ❌ Tự quản lý        | ✅ Tự động                 |
-| **Giới hạn**    | File size            | Free tier: 500MB           |
-| **Query**       | Đơn giản             | PostgreSQL mạnh mẽ         |
-| **Setup**       | Không cần            | Cần 5 phút                 |
-| **Offline**     | ✅ Hoạt động         | ❌ Cần internet            |
-| **Scalable**    | ❌ Không             | ✅ Có                      |
-
-## 💡 Best Practices
-
-### Khi nào nên dùng Supabase?
-
-✅ Làm việc trên nhiều máy  
-✅ Muốn backup tự động  
-✅ Sắp vượt quá giới hạn JSON  
-✅ Cần query phức tạp  
-✅ Làm việc nhóm
-
-### Khi nào nên dùng JSON?
-
-✅ Chỉ làm trên 1 máy  
-✅ Không muốn phụ thuộc internet  
-✅ Prototype nhanh  
-✅ Không cần backup
-
-### Hybrid Approach (Khuyến nghị)
-
-Cấu hình Supabase nhưng để fallback JSON:
-
-- Bình thường dùng Supabase
-- Khi mất mạng → tự động sang JSON
-- Khi có mạng lại → sync thủ công nếu cần
-
-## 📝 Các lệnh hữu ích
-
-```bash
-# Migration dữ liệu lên Supabase
+# Migration dữ liệu từ JSON cũ lên Supabase
 npm run migrate
 
-# Chạy bot (sẽ dùng Supabase nếu đã cấu hình)
+# Chạy bot
 npm run dev
 
 # Build và chạy production
 npm run build
 npm start
-
-# Xem JSON files (để backup thủ công)
-cat data/products.json
-cat data/history.json
-
-# Xóa JSON files (sau khi migration thành công)
-rm data/products.json data/history.json
 ```
-
-## 📚 Tài liệu tham khảo
-
-- [Supabase Docs](https://supabase.com/docs)
-- [PostgreSQL Docs](https://www.postgresql.org/docs/)
-- [JSONB Documentation](https://www.postgresql.org/docs/current/datatype-json.html)
 
 ---
 
-**Cập nhật lần cuối:** 2026-04-07  
-**Version:** 1.0.0
+**Cập nhật lần cuối:** 2026-04-08
+**Version:** 2.0.0

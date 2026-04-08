@@ -6,6 +6,8 @@ import {
   ImagePromptInput,
   ImagePromptOutput,
 } from "../prompts/image-creator";
+import { saveImageBrief } from "../data/storage";
+import { SavedImageBrief } from "../types/content";
 
 const DEFAULT_BRIEF: ImagePromptOutput = {
   adFormat: "feed-square",
@@ -24,7 +26,10 @@ const DEFAULT_BRIEF: ImagePromptOutput = {
 export { ImagePromptOutput as ImageBrief };
 
 export class ImageCreatorAgent {
-  async generateBrief(input: ImagePromptInput): Promise<ImagePromptOutput> {
+  async generateBrief(
+    input: ImagePromptInput,
+    productId: string | null = null,
+  ): Promise<{ brief: ImagePromptOutput; savedId: string }> {
     const startTime = Date.now();
     const loadingInterval = setInterval(() => {
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -43,7 +48,29 @@ export class ImageCreatorAgent {
     clearInterval(loadingInterval);
     process.stdout.write("\r" + " ".repeat(50) + "\r");
 
-    return this.parseResponse(response);
+    const brief = this.parseResponse(response);
+
+    // Self-save to storage
+    const briefToSave: SavedImageBrief = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      productId,
+      adPlatform: input.adPlatform,
+      aspectRatio: input.aspectRatio,
+      adFormat: brief.adFormat,
+      visualStyle: brief.visualStyle,
+      colorPalette: brief.colorPalette,
+      promptSafe: brief.prompts.safe,
+      promptBold: brief.prompts.bold,
+      promptLifestyle: brief.prompts.lifestyle,
+      negativePrompt: brief.negativePrompt,
+      shootingNotes: brief.shootingNotes,
+      rawAiResponse: { raw: response },
+      createdAt: new Date().toISOString(),
+    };
+
+    const saved = await saveImageBrief(briefToSave);
+
+    return { brief, savedId: saved.id };
   }
 
   private parseResponse(text: string): ImagePromptOutput {

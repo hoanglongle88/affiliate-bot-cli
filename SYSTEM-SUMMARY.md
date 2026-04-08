@@ -2,7 +2,7 @@
 
 ## 📋 Tổng quan
 
-Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, YouTube, Facebook Reels, Instagram Reels, Facebook Ads) sử dụng AI Ollama/Gemini.
+Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, YouTube, Facebook Reels, Instagram Reels, Facebook Ads) sử dụng AI Ollama/Gemini. Dữ liệu lưu Supabase (PostgreSQL).
 
 ---
 
@@ -13,7 +13,7 @@ Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, Yo
 **Workflow:** `trendscan`
 
 - AI research web → tìm sản phẩm HOT theo niche
-- Tạo TrendBrief + lưu product
+- Tạo TrendBrief + lưu product + lưu trend brief vào DB
 - Sau research: user chọn → Tạo script / Tạo description / Scan niche khác / Menu
 - Progress indicator với elapsed time
 
@@ -25,6 +25,7 @@ Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, Yo
 - AI tạo kịch bản conversion-focused (60s vàng)
 - Cấu trúc: Hook → Problem → Solution → CTA
 - Title tự động dựa trên angle (pain-point/price-shock/social-proof/curiosity)
+- **Tự lưu script vào DB** (`video_scripts` table)
 - Post-actions: Copy / Export / Edit / Regenerate / ⏮️ Back / Menu
 
 ### 3. ✍️ Marketing Writer — Caption theo nền tảng
@@ -34,6 +35,7 @@ Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, Yo
 - Caption tối ưu CTR cho từng nền tảng
 - Cấu trúc: Hook → Problem/Solution → Social Proof → CTA → Hashtags
 - Hashtags auto-default theo nền tảng
+- **Tự lưu caption vào DB** (`post_descriptions` table), link với script qua `script_id`
 - Post-actions: Copy / Export / Edit / Regenerate / ⏮️ Back / Menu
 
 ### 4. 🎨 Image Creator — Creative brief ảnh ads
@@ -42,6 +44,7 @@ Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, Yo
 
 - Chọn sản phẩm → nền tảng ads → tỷ lệ ảnh
 - AI tạo brief: format, visual style, color palette, 3 prompts (safe/bold/lifestyle)
+- **Tự lưu brief vào DB** (`image_briefs` table)
 - Post-actions: Copy / Export / Regenerate / Menu
 
 ### 5. 🎤 TTS Voice — Google Text-to-Speech
@@ -54,9 +57,10 @@ Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, Yo
 
 ### 6. 📜 History — Quản lý nội dung
 
-- Xem 10 entry gần nhất (tối đa 100)
+- Xem 50 entry gần nhất (tối đa 100 trong DB)
 - 🗑️ Xóa toàn bộ lịch sử (có xác nhận)
 - Copy / Export / Xóa entry / Tạo lại
+- History lưu reference IDs → content tables, không nhúng toàn bộ content
 
 ### 7. 📦 Products — Quản lý sản phẩm
 
@@ -70,28 +74,32 @@ Công cụ CLI tạo nội dung affiliate marketing đa nền tảng (TikTok, Yo
 
 ### 1. AutonomousTrendScanner (`agents/trend-scanner.ts`)
 
-- `scanAndGenerate(niche?)` → `{ brief, product }`
+- `scanAndGenerate(niche?)` → `{ brief, product, trendBriefId }`
 - Progress indicator: `⏳ Đang research trend... X.Xs`
+- Tự lưu product + trend brief vào DB
 - Chỉ research, KHÔNG gọi agents khác
 
 ### 2. VideoCreatorAgent (`agents/video-creator.ts`)
 
-- `generateScript(product, platform)` → `VideoScript`
+- `generateScript(product, platform, productId?)` → `{ script, savedId }`
 - Progress indicator: `⏳ Đang tạo kịch bản... X.Xs`
+- Tự lưu script vào DB (`video_scripts` table)
 - Parse JSON: hook, body, cta, script (merged), angle, platform_vibe, visual_cues
 - Title angle-based: "Đừng mua nếu chưa biết", "Giá không tưởng", v.v.
 
 ### 3. MarketingWriterAgent (`agents/marketing-writer.ts`)
 
-- `generateDescription(product, scriptSummary, platform, targetAudience?)` → `PostDescription`
+- `generateDescription(product, scriptSummary, platform, productId?, scriptId?, targetAudience?)` → `{ description, savedId }`
 - Progress indicator: `⏳ Đang tạo mô tả... X.Xs`
+- Tự lưu caption vào DB (`post_descriptions` table)
 - Auto-default hashtags theo nền tảng
 - Giữ emoji trong caption, chỉ remove hashtags
 
 ### 4. ImageCreatorAgent (`agents/image-creator.ts`)
 
-- `generateBrief(input)` → `ImagePromptOutput`
+- `generateBrief(input, productId?)` → `{ brief, savedId }`
 - Progress indicator: `⏳ Đang tạo brief ảnh... X.Xs`
+- Tự lưu brief vào DB (`image_briefs` table)
 - 3 prompts: safe, bold, lifestyle
 
 ---
@@ -148,16 +156,32 @@ type Platform =
 
 ## 🗑️ Xóa dữ liệu
 
-- `deleteAllProducts()` → Supabase `DELETE FROM products` hoặc JSON `writeJSON([])`
-- `clearHistory()` → Supabase `DELETE FROM history` hoặc JSON `writeJSON([])`
+- `deleteAllProducts()` → Supabase `DELETE FROM products`
+- `clearHistory()` → Supabase `DELETE FROM history`
+- `deleteAllVideoScripts()` → Supabase `DELETE FROM video_scripts`
+- `deleteAllPostDescriptions()` → Supabase `DELETE FROM post_descriptions`
+- `deleteAllTrendBriefs()` → Supabase `DELETE FROM trend_briefs`
+- `deleteAllImageBriefs()` → Supabase `DELETE FROM image_briefs`
 - Tất cả có xác nhận trước khi thực thi.
 
 ---
 
-## 🔐 Fallback Mechanisms
+## 🔐 Database
 
-**AI:** Ollama → Gemini → Báo lỗi
-**Storage:** Supabase → JSON files
+**Storage:** Supabase (PostgreSQL) — không có JSON fallback.
+
+Nếu Supabase chưa được cấu hình trong `.env`, bot sẽ thoát với lỗi.
+
+### 6 Tables
+
+| Table               | Mô tả                         |
+| ------------------- | ----------------------------- |
+| `products`          | Sản phẩm đã lưu               |
+| `video_scripts`     | Kịch bản video AI đã tạo      |
+| `post_descriptions` | Caption bài đăng AI đã tạo    |
+| `trend_briefs`      | Kết quả research trend        |
+| `image_briefs`      | Creative brief ảnh ads        |
+| `history`           | Lịch sử tạo content (ref IDs) |
 
 ---
 
@@ -166,6 +190,7 @@ type Platform =
 - ✏️ Chỉnh sửa hook/body/CTA/caption trong editor
 - 💾 Copy clipboard / Export `.txt`
 - 🔄 Products lưu tự động, theo dõi usage count
+- 📋 Chọn script đã lưu làm context cho caption (4 nguồn: script product, all scripts, manual, AI-gen)
 - ⏮️ Back navigation: Quay lại bước trước hoặc menu
 - 🗑️ Xóa toàn bộ products/history (có xác nhận)
 - ⏳ Progress indicator với elapsed time cho mọi AI call
