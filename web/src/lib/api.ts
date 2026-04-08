@@ -45,8 +45,18 @@ export const updateProduct = (
 ) => api.put(`/products/${id}`, data).then((r) => r.data);
 export const deleteProduct = (id: string) =>
   api.delete(`/products/${id}`).then((r) => r.data);
-export const exportProducts = () =>
-  window.open("/api/products/export", "_blank");
+export const exportProducts = async () => {
+  const res = await fetch("/api/products/export");
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `products_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+};
 export const importProducts = (csvContent: string) =>
   api.post("/products/import", { csvContent }).then((r) => r.data);
 
