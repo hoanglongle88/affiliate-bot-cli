@@ -143,7 +143,7 @@ async function selectOrEnterProduct(
     name: "🆕 Nhập sản phẩm mới",
     value: "new",
   });
-  choices.push({ name: "⏮️ Quay lại menu chính", value: "menu" });
+  choices.push({ name: "⏮️  Quay lại menu chính", value: "menu" });
   choices.push({ name: "❌  Thoát", value: "exit" });
 
   const { action } = await inquirer.prompt([
@@ -420,7 +420,7 @@ async function pickScriptFromList(
     };
   });
 
-  choices.push({ name: "⏮️ Quay lại chọn nguồn", value: "back" });
+  choices.push({ name: "⏮️  Quay lại menu chính", value: "back" });
   choices.push({ name: "❌  Thoát", value: "exit" });
 
   const { selectedScript } = await inquirer.prompt([
@@ -1052,8 +1052,26 @@ async function importCSVFlow() {
 
   if (!confirm) {
     console.log(chalk.yellow("\n❌ Đã hủy import.\n"));
-    const shouldExit = await askBackOrMenu();
-    if (shouldExit) process.exit(0);
+    const { afterCancel } = await inquirer.prompt([
+      {
+        type: "rawlist",
+        name: "afterCancel",
+        message: "Bạn muốn làm gì?",
+        choices: [
+          { name: "📄  Chọn file CSV khác", value: "retry" },
+          { name: "⏮️  Quay lại menu chính", value: "menu" },
+          { name: "❌  Thoát", value: "exit" },
+        ],
+      },
+    ]);
+
+    if (afterCancel === "exit") {
+      console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+      process.exit(0);
+    }
+    if (afterCancel === "retry") {
+      await importCSVFlow();
+    }
     return;
   }
 
@@ -1115,7 +1133,7 @@ async function viewHistory() {
 
   productChoices.push({ name: "─".repeat(50), value: "sep" });
   productChoices.push({ name: "🗑️  Xóa TOÀN BỘ lịch sử", value: "clearAll" });
-  productChoices.push({ name: "❌  Quay lại", value: "back" });
+  productChoices.push({ name: "⏮️  Quay lại menu chính", value: "back" });
 
   const { selectedProduct } = await inquirer.prompt([
     {
@@ -1218,7 +1236,7 @@ async function viewHistory() {
     value: "regenerate",
   });
   contentChoices.push({
-    name: "⏮️  Quay lại danh sách sản phẩm",
+    name: "⏮️  Quay lại menu chính",
     value: "back",
   });
 
@@ -1246,14 +1264,19 @@ async function viewHistory() {
           { name: "🎬  Kịch bản video", value: "script" },
           { name: "✍️  Caption bài đăng", value: "description" },
           { name: "🎨  Brief ảnh ads", value: "imagebrief" },
-          { name: "⏮️  Quay lại", value: "back" },
+          { name: "⏮️  Quay lại menu chính", value: "back" },
         ],
       },
     ]);
 
+    if (workflowType === "back") return;
+
     if (workflowType === "script") await generateScriptFlow();
     else if (workflowType === "description") await generateDescriptionFlow();
     else if (workflowType === "imagebrief") await generateImageBriefFlow();
+
+    // Return to content listing for this product after regenerating
+    await viewHistory();
     return;
   }
 
@@ -1282,7 +1305,7 @@ async function viewHistory() {
           choices: [
             { name: "📋  Copy vào clipboard", value: "copy" },
             { name: "💾  Xuất ra file txt", value: "export" },
-            { name: "⏮️  Quay lại", value: "back" },
+            { name: "⏮️  Quay lại menu chính", value: "back" },
           ],
         },
       ]);
@@ -1340,7 +1363,7 @@ async function viewHistory() {
           choices: [
             { name: "📋  Copy vào clipboard", value: "copy" },
             { name: "💾  Xuất ra file txt", value: "export" },
-            { name: "⏮️  Quay lại", value: "back" },
+            { name: "⏮️  Quay lại menu chính", value: "back" },
           ],
         },
       ]);
@@ -1399,7 +1422,7 @@ async function viewHistory() {
           choices: [
             { name: "📋  Copy prompts vào clipboard", value: "copy" },
             { name: "💾  Xuất ra file txt", value: "export" },
-            { name: "⏮️  Quay lại", value: "back" },
+            { name: "⏮️  Quay lại menu chính", value: "back" },
           ],
         },
       ]);
@@ -1511,7 +1534,7 @@ async function manageProducts() {
       message: "Làm gì tiếp theo?",
       choices: [
         { name: "🗑️  Xóa sản phẩm này", value: "delete" },
-        { name: "⏮️  Quay lại danh sách", value: "back" },
+        { name: "⏮️  Quay lại menu chính", value: "back" },
         { name: "⏭️  Về menu chính", value: "menu" },
       ],
     },
@@ -1988,10 +2011,17 @@ async function viewUsage() {
       message: "Làm gì tiếp theo?",
       choices: [
         { name: "🔄  Reset thống kê", value: "reset" },
-        { name: "⏭️  Quay lại menu chính", value: "menu" },
+        { name: "⏮️  Quay lại menu chính", value: "menu" },
+        { name: "❌  Thoát", value: "exit" },
       ],
     },
   ]);
+
+  if (action === "exit") {
+    console.log(chalk.gray("\n👋 Hẹn gặp lại!\n"));
+    process.exit(0);
+  }
+  if (action === "menu") return;
 
   if (action === "reset") {
     const { confirm } = await inquirer.prompt([
@@ -2036,40 +2066,28 @@ async function askMainMenu(): Promise<string> {
       choices: [
         new inquirer.Separator(" 🔍 Nghiên cứu & Phân tích xu hướng "),
         {
-          name: "[Trend Researcher] - Quét trend, tìm sản phẩm hot theo ngách",
+          name: "Trend Researcher — Quét trend, tìm sản phẩm hot",
           value: "trendscan",
         },
         new inquirer.Separator(" ✍️ Tạo nội dung với AI "),
+        { name: "Video Creator — Tạo kịch bản video", value: "script" },
         {
-          name: "[Video Creator] - Tạo kịch bản video TikTok/YouTube",
-          value: "script",
-        },
-        {
-          name: "[Marketing Writer] - Tạo caption & hashtags bài đăng",
+          name: "Marketing Writer — Tạo caption & hashtags",
           value: "description",
         },
+        { name: "Image Creator — Tạo brief ảnh ads", value: "imagebrief" },
         {
-          name: "[Image Creator] - Tạo brief ảnh ads (prompt AI)",
-          value: "imagebrief",
-        },
-        {
-          name: "[Short Creator] - Tạo video prompt cho AI Veo",
+          name: "Short Creator — Video prompt cho AI Veo",
           value: "short_video",
         },
         new inquirer.Separator(" 🎨 Tiện ích & Quản lý "),
-        {
-          name: "[TTS Voice] - Chuyển kịch bản thành giọng nói (Google TTS)",
-          value: "tts",
-        },
-        { name: "[History] - Xem & quản lý nội dung đã tạo", value: "history" },
-        { name: "[Products] - Xem & quản lý sản phẩm", value: "products" },
-        {
-          name: "[Import CSV] - Nhập sản phẩm từ file CSV",
-          value: "importcsv",
-        },
+        { name: "TTS Voice — Chuyển kịch bản thành giọng nói", value: "tts" },
+        { name: "History — Xem & quản lý nội dung đã tạo", value: "history" },
+        { name: "Products — Xem & quản lý sản phẩm", value: "products" },
+        { name: "Import CSV — Nhập sản phẩm hàng loạt", value: "importcsv" },
         new inquirer.Separator(" ⚙️ Hệ thống "),
-        { name: "[System] - Kiểm tra kết nối AI providers", value: "check" },
-        { name: "[Usage] - Xem thống kê sử dụng AI", value: "usage" },
+        { name: "System — Kiểm tra kết nối AI", value: "check" },
+        { name: "Usage — Xem thống kê sử dụng AI", value: "usage" },
         new inquirer.Separator(""),
         { name: "❌  Thoát chương trình", value: "exit" },
       ],
