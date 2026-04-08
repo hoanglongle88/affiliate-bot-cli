@@ -17,7 +17,7 @@ router.get("/", async (req: Request, res: Response) => {
     const allProducts = await getProducts();
     const q = (req.query.q as string)?.toLowerCase() || "";
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const limit = parseInt(req.query.limit as string) || 10;
 
     // Search filter
     const filtered = q
@@ -35,6 +35,10 @@ router.get("/", async (req: Request, res: Response) => {
     const currentPage = Math.min(page, totalPages);
     const start = (currentPage - 1) * limit;
     const products = filtered.slice(start, start + limit);
+
+    console.log(
+      `[API] GET /api/products: page=${page}, limit=${limit}, q="${q}" → returning ${products.length}/${total} products`,
+    );
 
     res.json({ products, total, page: currentPage, totalPages, limit });
   } catch (error: any) {

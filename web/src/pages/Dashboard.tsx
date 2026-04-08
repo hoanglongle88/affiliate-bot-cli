@@ -22,7 +22,7 @@ export default function Dashboard() {
     const load = async () => {
       try {
         const [productsRes, history] = await Promise.all([
-          getProducts(),
+          getProducts({ limit: 1 }), // Chỉ lấy 1 để lấy total count
           getHistory(),
         ]);
         const scripts = history.filter((h) => h.workflow === "script").length;
