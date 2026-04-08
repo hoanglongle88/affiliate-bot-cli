@@ -48,7 +48,7 @@ app.use("/api/history", historyRouter);
 const webDist = path.join(__dirname, "../web/dist");
 if (fs.existsSync(webDist)) {
   app.use(express.static(webDist));
-  app.get("*", (_req, res) => {
+  app.get(/(.*)/, (_req, res) => {
     res.sendFile(path.join(webDist, "index.html"));
   });
 }
