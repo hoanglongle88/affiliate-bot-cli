@@ -864,11 +864,9 @@ function getExportFilePath(productName: string): string {
 }
 
 /**
- * Export image brief to file (creates new file)
+ * Build image brief section text
  */
-export function exportImageBrief(
-  productName: string,
-  productInfo: { price: string; rating: string; sold: string },
+function buildImageBriefSection(
   brief: {
     adFormat: string;
     visualStyle: string;
@@ -880,22 +878,7 @@ export function exportImageBrief(
   adPlatform: string,
   aspectRatio: string,
 ): string {
-  const filepath = getExportFilePath(productName);
-  const date = new Date().toLocaleString("vi-VN");
-
   const lines: string[] = [];
-  lines.push("═".repeat(50));
-  lines.push(`  AFFILIATE BOT - ${productName.toUpperCase()}`);
-  lines.push(`  Ngày: ${date}`);
-  lines.push("═".repeat(50));
-  lines.push("");
-  lines.push(`📦 Sản phẩm: ${productName}`);
-  lines.push(`💰 Giá: ${productInfo.price}`);
-  lines.push(`⭐ Đánh giá: ${productInfo.rating}`);
-  lines.push(`🔥 Đã bán: ${productInfo.sold}`);
-  lines.push("");
-
-  // Image Brief section
   lines.push("─".repeat(40));
   lines.push("🖼️ IMAGE BRIEF");
   lines.push("─".repeat(40));
@@ -918,8 +901,127 @@ export function exportImageBrief(
   lines.push(`🚫 Negative: ${brief.negativePrompt}`);
   lines.push(`📸 Notes: ${brief.shootingNotes}`);
   lines.push("");
+  return lines.join("\n");
+}
 
-  // Placeholder for Post Description
+/**
+ * Build post description section text
+ */
+function buildPostDescriptionSection(description: {
+  headline: string;
+  content: string;
+  offer: string;
+  cta: string;
+  hashtags: string[];
+  wordCount: number;
+}): string {
+  const lines: string[] = [];
+  lines.push("─".repeat(40));
+  lines.push("📝 POST DESCRIPTION");
+  lines.push("─".repeat(40));
+  if (description.headline) lines.push(`🔥 Headline: ${description.headline}`);
+  if (description.content) lines.push(`📝 Content: ${description.content}`);
+  if (description.offer) lines.push(`⚡ Offer: ${description.offer}`);
+  if (description.cta) lines.push(`👉 CTA: ${description.cta}`);
+  if (description.hashtags.length > 0) {
+    const hashTags = description.hashtags.map((t) => `#${t}`).join(" ");
+    lines.push(`🏷️ Hashtags: ${hashTags}`);
+  }
+  lines.push(`📊 Độ dài: ~${description.wordCount} từ`);
+  lines.push("");
+  return lines.join("\n");
+}
+
+/**
+ * Export image brief to file (creates new file OR updates existing)
+ */
+export function exportImageBrief(
+  productName: string,
+  productInfo: { price: string; rating: string; sold: string },
+  brief: {
+    adFormat: string;
+    visualStyle: string;
+    colorPalette: string[];
+    prompts: { safe: string; bold: string; lifestyle: string };
+    negativePrompt: string;
+    shootingNotes: string;
+  },
+  adPlatform: string,
+  aspectRatio: string,
+): string {
+  const filepath = getExportFilePath(productName);
+  const imageBriefText = buildImageBriefSection(brief, adPlatform, aspectRatio);
+
+  // If file exists, update it
+  if (fs.existsSync(filepath)) {
+    let content = fs.readFileSync(filepath, "utf-8");
+
+    // Check if IMAGE BRIEF section exists
+    const imageBriefIndex = content.indexOf("🖼️ IMAGE BRIEF");
+    if (imageBriefIndex !== -1) {
+      // Replace existing image brief section
+      const dividerBefore = content.lastIndexOf(
+        "─".repeat(40),
+        imageBriefIndex,
+      );
+      const postDescIndex = content.indexOf("📝 POST DESCRIPTION");
+
+      if (
+        dividerBefore !== -1 &&
+        postDescIndex !== -1 &&
+        postDescIndex > imageBriefIndex
+      ) {
+        // Replace between dividers
+        const before = content.substring(0, dividerBefore);
+        const after = content.substring(postDescIndex);
+        content = before + imageBriefText + "\n" + after;
+      } else if (dividerBefore !== -1) {
+        // No post description yet — replace to end of file
+        content = content.substring(0, dividerBefore) + imageBriefText;
+        // Add placeholder for post description
+        content += "\n─".repeat(40) + "\n📝 POST DESCRIPTION\n";
+        content +=
+          "─".repeat(40) +
+          "\n\n  [Chưa có — sẽ được cập nhật sau khi tạo caption]\n";
+        content += "═".repeat(50);
+      }
+    } else {
+      // No image brief section — prepend before post description or at end
+      const postDescIndex = content.indexOf("📝 POST DESCRIPTION");
+      if (postDescIndex !== -1) {
+        const before = content.substring(0, postDescIndex);
+        const after = content.substring(postDescIndex);
+        content = before.trimEnd() + "\n\n" + imageBriefText + "\n" + after;
+      } else {
+        // Append at end, remove footer first
+        content = content.replace(/\n═{50}$/, "").trimEnd();
+        content += "\n\n" + imageBriefText;
+        content += "\n─".repeat(40) + "\n📝 POST DESCRIPTION\n";
+        content +=
+          "─".repeat(40) +
+          "\n\n  [Chưa có — sẽ được cập nhật sau khi tạo caption]\n";
+        content += "═".repeat(50);
+      }
+    }
+
+    fs.writeFileSync(filepath, content, "utf-8");
+    return filepath;
+  }
+
+  // File doesn't exist — create new
+  const date = new Date().toLocaleString("vi-VN");
+  const lines: string[] = [];
+  lines.push("═".repeat(50));
+  lines.push(`  AFFILIATE BOT - ${productName.toUpperCase()}`);
+  lines.push(`  Ngày: ${date}`);
+  lines.push("═".repeat(50));
+  lines.push("");
+  lines.push(`📦 Sản phẩm: ${productName}`);
+  lines.push(`💰 Giá: ${productInfo.price}`);
+  lines.push(`⭐ Đánh giá: ${productInfo.rating}`);
+  lines.push(`🔥 Đã bán: ${productInfo.sold}`);
+  lines.push("");
+  lines.push(imageBriefText);
   lines.push("─".repeat(40));
   lines.push("📝 POST DESCRIPTION");
   lines.push("─".repeat(40));
