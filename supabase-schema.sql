@@ -1,6 +1,6 @@
--- Affiliate Bot CLI - Supabase Schema v2
+-- Affiliate Bot CLI - Supabase Schema v2.1
 -- Run this SQL in your Supabase SQL Editor
--- Updated: 2026-04-08 — Added separate tables for each content type
+-- Updated: 2026-04-09 — Added usp column, short_video workflow, separate content tables
 
 -- ── Products table ──
 CREATE TABLE IF NOT EXISTS products (
@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS products (
   price TEXT NOT NULL DEFAULT 'Chưa có',
   rating TEXT NOT NULL DEFAULT 'Chưa có',
   sold TEXT NOT NULL DEFAULT 'Chưa có',
+  usp TEXT,
   usage_count INTEGER NOT NULL DEFAULT 1,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -96,13 +97,14 @@ CREATE TABLE IF NOT EXISTS history (
   product_id TEXT REFERENCES products(id) ON DELETE CASCADE,
   script_id TEXT REFERENCES video_scripts(id) ON DELETE SET NULL,
   description_id TEXT REFERENCES post_descriptions(id) ON DELETE SET NULL,
-  workflow TEXT NOT NULL CHECK (workflow IN ('script', 'description', 'full', 'trend', 'image_brief')),
+  workflow TEXT NOT NULL CHECK (workflow IN ('script', 'description', 'full', 'trend', 'image_brief', 'short_video')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ── Indexes ──
 CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);
 CREATE INDEX IF NOT EXISTS idx_products_usage_count ON products(usage_count DESC);
+CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_video_scripts_product_id ON video_scripts(product_id);
 CREATE INDEX IF NOT EXISTS idx_video_scripts_platform ON video_scripts(platform);
@@ -118,6 +120,9 @@ CREATE INDEX IF NOT EXISTS idx_trend_briefs_created_at ON trend_briefs(created_a
 
 CREATE INDEX IF NOT EXISTS idx_image_briefs_product_id ON image_briefs(product_id);
 CREATE INDEX IF NOT EXISTS idx_image_briefs_created_at ON image_briefs(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_short_video_prompts_product_id ON short_video_prompts(product_id);
+CREATE INDEX IF NOT EXISTS idx_short_video_prompts_created_at ON short_video_prompts(created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_history_created_at ON history(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_history_workflow ON history(workflow);
