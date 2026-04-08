@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Wand2, Copy, Check } from "lucide-react";
+import type { PostDescription } from "../interfaces";
 
 const PLATFORMS = [
   "tiktok",
@@ -26,7 +27,7 @@ export default function Captions() {
     scriptSummary: "",
   });
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<PostDescription | null>(null);
   const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,7 +63,7 @@ export default function Captions() {
 
   const handleCopy = () => {
     if (!result) return;
-    const tags = result.hashtags.map((t: string) => `#${t}`).join(" ");
+    const tags = result.hashtags.map((t) => `#${t}`).join(" ");
     navigator.clipboard.writeText(`${result.caption}\n\n${tags}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -161,7 +162,7 @@ export default function Captions() {
             <div>
               <p className="text-[var(--text-secondary)] mb-1">🏷️ Hashtags</p>
               <p className="text-green-400 break-words">
-                {result.hashtags.map((t: string) => `#${t}`).join(" ")}
+                {result.hashtags.map((t) => `#${t}`).join(" ")}
               </p>
             </div>
             <div className="flex flex-wrap gap-4 text-[var(--text-secondary)] text-xs pt-2 border-t border-[var(--border-color)]">

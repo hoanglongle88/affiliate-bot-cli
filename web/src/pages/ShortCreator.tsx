@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { Copy, Check, Film } from "lucide-react";
-import { getProducts } from "../lib/api";
+import { getProducts, createShortVideo } from "../lib/api";
+import type {
+  Product,
+  ShortVideoResult,
+  ShortVideoTimelineSegment,
+  Platform,
+} from "../interfaces";
 
 const PLATFORMS = [
   "tiktok",
@@ -19,21 +25,21 @@ const PLATFORM_LABELS: Record<string, string> = {
 };
 
 export default function ShortCreator() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [selectedProductName, setSelectedProductName] = useState("");
-  const [platform, setPlatform] = useState("tiktok");
+  const [platform, setPlatform] = useState<Platform>("tiktok");
   const [hook, setHook] = useState("");
   const [body, setBody] = useState("");
   const [cta, setCta] = useState("");
   const [estimatedDuration, setEstimatedDuration] = useState("30 giây");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ShortVideoResult | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     getProducts()
-      .then(setProducts)
+      .then((res) => setProducts(res.products))
       .catch(() => {});
   }, []);
 
@@ -50,23 +56,11 @@ export default function ShortCreator() {
     setResult(null);
 
     try {
-      const res = await fetch("/api/short", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productName: selectedProductName || "Sản phẩm",
-          script: {
-            platform,
-            hook,
-            body,
-            voiceoverCTA: cta,
-            estimatedDuration,
-          },
-          productId: selectedProductId || null,
-          scriptId: null,
-        }),
+      const data = await createShortVideo({
+        productName: selectedProductName || "Sản phẩm",
+        script: { platform, hook, body, voiceoverCTA: cta, estimatedDuration },
+        productId: selectedProductId || null,
       });
-      const data = await res.json();
       if (data.prompt) setResult(data.prompt);
       else alert(data.error || "Không thể tạo video prompt");
     } catch {
@@ -115,7 +109,7 @@ export default function ShortCreator() {
           <select
             className={selectClass}
             value={platform}
-            onChange={(e) => setPlatform(e.target.value)}
+            onChange={(e) => setPlatform(e.target.value as Platform)}
           >
             {PLATFORMS.map((p) => (
               <option key={p} value={p}>
@@ -213,24 +207,26 @@ export default function ShortCreator() {
 
           {/* Timeline segments */}
           <div className="space-y-3 mb-4">
-            {result.timeline.map((seg: any, i: number) => (
-              <div
-                key={i}
-                className="bg-[var(--bg-secondary)] rounded-lg p-4 border-l-2 border-[var(--accent-purple)]"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-mono text-[var(--accent-cyan)]">
-                    {seg.range}
-                  </span>
-                  <span className="text-xs text-[var(--text-secondary)]">
-                    {seg.content}
-                  </span>
+            {result.timeline.map(
+              (seg: ShortVideoTimelineSegment, i: number) => (
+                <div
+                  key={i}
+                  className="bg-[var(--bg-secondary)] rounded-lg p-4 border-l-2 border-[var(--accent-purple)]"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-mono text-[var(--accent-cyan)]">
+                      {seg.range}
+                    </span>
+                    <span className="text-xs text-[var(--text-secondary)]">
+                      {seg.content}
+                    </span>
+                  </div>
+                  <p className="text-sm text-[var(--text-primary)]">
+                    {seg.prompt}
+                  </p>
                 </div>
-                <p className="text-sm text-[var(--text-primary)]">
-                  {seg.prompt}
-                </p>
-              </div>
-            ))}
+              ),
+            )}
           </div>
 
           {/* Full prompt */}

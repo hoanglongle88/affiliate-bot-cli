@@ -1,4 +1,11 @@
 import axios from "axios";
+import type {
+  ProductsResponse,
+  HistoryEntry,
+  HealthResponse,
+  ShortVideoResult,
+  ImageBriefResult,
+} from "../interfaces";
 
 const api = axios.create({
   baseURL: "/api",
@@ -15,7 +22,7 @@ export const getProducts = (params?: {
   if (params?.q) query.set("q", params.q);
   if (params?.page) query.set("page", String(params.page));
   if (params?.limit) query.set("limit", String(params.limit));
-  return api.get(`/products?${query}`).then((r) => r.data);
+  return api.get<ProductsResponse>(`/products?${query}`).then((r) => r.data);
 };
 export const createProduct = (data: {
   name: string;
@@ -38,37 +45,111 @@ export const deleteProduct = (id: string) =>
   api.delete(`/products/${id}`).then((r) => r.data);
 
 // Scripts
+interface ScriptResponse {
+  script: {
+    id: string;
+    platform: string;
+    title: string;
+    hook: string;
+    body: string;
+    voiceoverCTA: string;
+    wordCount: number;
+    estimatedDuration: string;
+  };
+}
 export const createScript = (data: {
-  product: any;
+  product: {
+    name: string;
+    description: string;
+    price: string;
+    rating: string;
+    sold: string;
+  };
   platform: string;
   productId?: string | null;
-}) => api.post("/scripts", data).then((r) => r.data);
+}) => api.post<ScriptResponse>("/scripts", data).then((r) => r.data);
 
 // Captions
+interface CaptionResponse {
+  description: {
+    id: string;
+    platform: string;
+    headline: string;
+    content: string;
+    offer: string;
+    cta: string;
+    hashtags: string[];
+    caption: string;
+    wordCount: number;
+  };
+}
 export const createCaption = (data: {
-  product: any;
+  product: {
+    name: string;
+    description: string;
+    price: string;
+    rating: string;
+    sold: string;
+  };
   scriptSummary: string;
   platform: string;
   productId?: string | null;
-}) => api.post("/captions", data).then((r) => r.data);
+}) => api.post<CaptionResponse>("/captions", data).then((r) => r.data);
 
 // Short Video (Veo)
+interface ShortResponse {
+  prompt?: ShortVideoResult;
+  error?: string;
+}
 export const createShortVideo = (data: {
   productName: string;
-  script: any;
+  script: {
+    platform: string;
+    hook: string;
+    body: string;
+    voiceoverCTA: string;
+    estimatedDuration: string;
+    wordCount?: number;
+    title?: string;
+  };
   productId?: string | null;
-}) => api.post("/short", data).then((r) => r.data);
+}) => api.post<ShortResponse>("/short", data).then((r) => r.data);
 
 // Image Brief
+interface ImageResponse {
+  brief: ImageBriefResult;
+}
 export const createImageBrief = (data: {
   productName: string;
   adPlatform: string;
   aspectRatio: string;
   productId?: string | null;
-}) => api.post("/image", data).then((r) => r.data);
+}) => api.post<ImageResponse>("/image", data).then((r) => r.data);
+
+// Trend
+interface TrendResponse {
+  brief: {
+    product: {
+      name: string;
+      price: string;
+      views: string;
+      trendPercent: string;
+    };
+    hook: string;
+    angle: string;
+    painPoint: string;
+    ctaAngle: string;
+    hashtags: string[];
+  };
+  product: { id: string; name: string };
+}
+export const scanTrend = (data: { nicheId?: string }) =>
+  api.post<TrendResponse>("/trends/scan", data).then((r) => r.data);
 
 // History
-export const getHistory = () => api.get("/history").then((r) => r.data.history);
+export const getHistory = () =>
+  api.get<HistoryEntry[]>("/history").then((r) => r.data);
 
 // Health
-export const checkHealth = () => api.get("/health").then((r) => r.data);
+export const checkHealth = () =>
+  api.get<HealthResponse>("/health").then((r) => r.data);

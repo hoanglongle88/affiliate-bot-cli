@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { Copy, Check, Image } from "lucide-react";
 import { getProducts } from "../lib/api";
+import type {
+  Product,
+  ImageBriefResult,
+  AdPlatform,
+  AspectRatio,
+} from "../interfaces";
 
 const AD_PLATFORMS = ["facebook", "tiktok", "shopee", "lazada"] as const;
 const AD_PLATFORM_LABELS: Record<string, string> = {
@@ -16,19 +22,27 @@ const ASPECT_RATIOS = [
   { value: "16:9", label: "16:9 — Ngang (YouTube, Banner)" },
 ];
 
+const PROMPT_KEYS = ["safe", "bold", "lifestyle"] as const;
+const PROMPT_LABELS = ["🟢 SAFE", "🟡 BOLD", "🔵 LIFESTYLE"] as const;
+const PROMPT_COLORS = [
+  "text-green-400",
+  "text-yellow-400",
+  "text-blue-400",
+] as const;
+
 export default function ImageCreator() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [selectedProductName, setSelectedProductName] = useState("");
-  const [adPlatform, setAdPlatform] = useState("facebook");
-  const [aspectRatio, setAspectRatio] = useState("1:1");
+  const [adPlatform, setAdPlatform] = useState<AdPlatform>("facebook");
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("1:1");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ImageBriefResult | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     getProducts()
-      .then(setProducts)
+      .then((res) => setProducts(res.products))
       .catch(() => {});
   }, []);
 
@@ -107,7 +121,7 @@ export default function ImageCreator() {
           <select
             className={selectClass}
             value={adPlatform}
-            onChange={(e) => setAdPlatform(e.target.value)}
+            onChange={(e) => setAdPlatform(e.target.value as AdPlatform)}
           >
             {AD_PLATFORMS.map((p) => (
               <option key={p} value={p}>
@@ -118,7 +132,7 @@ export default function ImageCreator() {
           <select
             className={selectClass}
             value={aspectRatio}
-            onChange={(e) => setAspectRatio(e.target.value)}
+            onChange={(e) => setAspectRatio(e.target.value as AspectRatio)}
           >
             {ASPECT_RATIOS.map((r) => (
               <option key={r.value} value={r.value}>
@@ -190,21 +204,17 @@ export default function ImageCreator() {
           </div>
 
           <div className="space-y-4">
-            {[
-              { label: "🟢 SAFE", key: "safe", color: "text-green-400" },
-              { label: "🟡 BOLD", key: "bold", color: "text-yellow-400" },
-              {
-                label: "🔵 LIFESTYLE",
-                key: "lifestyle",
-                color: "text-blue-400",
-              },
-            ].map(({ label, key, color }) => (
+            {PROMPT_KEYS.map((key, idx) => (
               <div
                 key={key}
                 className="bg-[var(--bg-secondary)] rounded-lg p-4"
               >
-                <p className={`text-sm font-semibold mb-2 ${color}`}>{label}</p>
-                <p className="text-sm">{(result.prompts as any)[key]}</p>
+                <p
+                  className={`text-sm font-semibold mb-2 ${PROMPT_COLORS[idx]}`}
+                >
+                  {PROMPT_LABELS[idx]}
+                </p>
+                <p className="text-sm">{result.prompts[key]}</p>
               </div>
             ))}
           </div>

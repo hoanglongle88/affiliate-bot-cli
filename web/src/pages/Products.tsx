@@ -17,10 +17,11 @@ import {
   updateProduct,
   deleteProduct,
 } from "../lib/api";
+import type { Product } from "../interfaces";
 import ErrorBoundary from "../components/ErrorBoundary";
 
 function ProductsContent() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -50,12 +51,14 @@ function ProductsContent() {
         page: pageNum || 1,
         limit: PAGE_SIZE,
       });
-      setProducts(data.products || []);
-      setTotal(data.total || 0);
-      setTotalPages(data.totalPages || 1);
-      setPage(data.page || 1);
-    } catch (e: any) {
-      setError(e.message || "Không thể tải danh sách sản phẩm");
+      setProducts(data.products);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
+      setPage(data.page);
+    } catch (e: unknown) {
+      const message =
+        e instanceof Error ? e.message : "Không thể tải danh sách sản phẩm";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -94,14 +97,15 @@ function ProductsContent() {
       await createProduct(form);
       resetForm();
       load(search, page);
-    } catch (e: any) {
-      alert(e.response?.data?.error || "Không thể tạo sản phẩm");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Không thể tạo sản phẩm";
+      alert(message);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleEdit = (product: any) => {
+  const handleEdit = (product: Product) => {
     setEditId(product.id);
     setForm({
       name: product.name,
@@ -120,8 +124,9 @@ function ProductsContent() {
       await updateProduct(editId, form);
       resetForm();
       load(search, page);
-    } catch (e: any) {
-      alert(e.response?.data?.error || "Không thể cập nhật");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Không thể cập nhật";
+      alert(message);
     } finally {
       setSubmitting(false);
     }
@@ -460,8 +465,6 @@ function ProductsContent() {
                 >
                   {submitting ? (
                     <span className="animate-spin">⏳</span>
-                  ) : editId ? (
-                    <Check size={16} />
                   ) : (
                     <Check size={16} />
                   )}

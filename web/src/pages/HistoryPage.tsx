@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FileText, MessageSquare, RefreshCw } from "lucide-react";
 import { getHistory } from "../lib/api";
+import type { HistoryEntry } from "../interfaces";
 
 const WORKFLOW_LABELS: Record<string, string> = {
   script: "Kịch bản",
@@ -12,7 +13,7 @@ const WORKFLOW_LABELS: Record<string, string> = {
 };
 
 export default function HistoryPage() {
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {

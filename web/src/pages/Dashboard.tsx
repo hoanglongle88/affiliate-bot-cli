@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Package, FileText, MessageSquare, TrendingUp } from "lucide-react";
 import { getProducts, getHistory, checkHealth } from "../lib/api";
+import type { HistoryEntry } from "../interfaces";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -14,20 +15,25 @@ export default function Dashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [products, history] = await Promise.all([
+        const [productsRes, history] = await Promise.all([
           getProducts(),
           getHistory(),
         ]);
         const scripts = history.filter(
-          (h: any) => h.workflow === "script",
+          (h: HistoryEntry) => h.workflow === "script",
         ).length;
         const captions = history.filter(
-          (h: any) => h.workflow === "description",
+          (h: HistoryEntry) => h.workflow === "description",
         ).length;
         const trends = history.filter(
-          (h: any) => h.workflow === "trend",
+          (h: HistoryEntry) => h.workflow === "trend",
         ).length;
-        setStats({ products: products.length, scripts, captions, trends });
+        setStats({
+          products: productsRes.products.length,
+          scripts,
+          captions,
+          trends,
+        });
       } catch {
         setStats({ products: 0, scripts: 0, captions: 0, trends: 0 });
       }

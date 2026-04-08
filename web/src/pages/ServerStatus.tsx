@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { checkHealth } from "../lib/api";
+import type { HealthResponse } from "../interfaces";
 import { CheckCircle, XCircle, RefreshCw, Clock } from "lucide-react";
 
 export default function ServerStatus() {
-  const [health, setHealth] = useState<any>(null);
+  const [health, setHealth] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Wand2, Copy, Check } from "lucide-react";
+import type { VideoScript } from "../interfaces";
 
 const PLATFORMS = [
   "tiktok",
@@ -25,7 +26,7 @@ export default function Scripts() {
     platform: "tiktok",
   });
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<VideoScript | null>(null);
   const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
